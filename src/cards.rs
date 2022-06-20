@@ -1,7 +1,8 @@
-use strum::IntoEnumIterator;
-use strum_macros::EnumIter;
+use std::fmt;
+use strum::{EnumCount, IntoEnumIterator};
+use strum_macros::{EnumCount as EnumCountMacro, EnumIter};
 
-#[derive(EnumIter, Copy, Clone, Debug)]
+#[derive(EnumIter, EnumCountMacro, Copy, Clone, Debug)]
 enum Rank {
     Ace,
     Two,
@@ -19,7 +20,7 @@ enum Rank {
 }
 
 impl Rank {
-    const fn numeric_value(&self) -> u8 {
+    const fn numeric_value(&self) -> u32 {
         match self {
             Self::Ace => 1,
             Self::Two => 2,
@@ -36,9 +37,27 @@ impl Rank {
             Self::King => 10,
         }
     }
+
+    const fn simple_abbreviation(&self) -> &str {
+        match self {
+            Self::Ace => "A",
+            Self::Two => "2",
+            Self::Three => "3",
+            Self::Four => "4",
+            Self::Five => "5",
+            Self::Six => "6",
+            Self::Seven => "7",
+            Self::Eight => "8",
+            Self::Nine => "9",
+            Self::Ten => "10",
+            Self::Jack => "J",
+            Self::Queen => "Q",
+            Self::King => "K",
+        }
+    }
 }
 
-#[derive(EnumIter, Copy, Clone, Debug)]
+#[derive(EnumIter, EnumCountMacro, Copy, Clone, Debug)]
 enum Suit {
     Club,
     Diamond,
@@ -57,25 +76,32 @@ impl Suit {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct Card{
     rank: Rank,
     suit: Suit
 }
 
-impl Card {
-    pub fn standard_deck() -> [Card; 52] {
-        let mut card_collector: Vec<Card> = Vec::new();
-
-        for suit in Suit::iter() {
-            for rank in Rank::iter() {
-                card_collector.push(Card {
-                    rank,
-                    suit
-                })
-            }
-        }
-
-        card_collector.try_into().unwrap()
+impl fmt::Display for Card {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}{}", self.rank.simple_abbreviation(), self.suit.unicode_representation())
     }
+}
+
+pub const STANDARD_DECK_COUNT: usize = Suit::COUNT * Rank::COUNT;
+
+pub fn standard_deck() -> [Card; Suit::COUNT * Rank::COUNT] {
+    let mut card_collector: Vec<Card> = Vec::new();
+
+    for suit in Suit::iter() {
+        for rank in Rank::iter() {
+            card_collector.push(Card {
+                rank,
+                suit
+            })
+        }
+    }
+
+    // Guaranteed to be coorect length of suits * ranks
+    card_collector.try_into().unwrap()  
 }
