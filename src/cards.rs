@@ -16,7 +16,7 @@ enum Rank {
     Ten,
     Jack,
     Queen,
-    King
+    King,
 }
 
 impl Rank {
@@ -62,7 +62,7 @@ enum Suit {
     Club,
     Diamond,
     Heart,
-    Spade
+    Spade,
 }
 
 impl Suit {
@@ -77,9 +77,9 @@ impl Suit {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub struct Card{
+pub struct Card {
     rank: Rank,
-    suit: Suit
+    suit: Suit,
 }
 
 impl Card {
@@ -90,7 +90,12 @@ impl Card {
 
 impl fmt::Display for Card {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}{}", self.rank.simple_abbreviation(), self.suit.unicode_representation())
+        write!(
+            f,
+            "{}{}",
+            self.rank.simple_abbreviation(),
+            self.suit.unicode_representation()
+        )
     }
 }
 
@@ -101,13 +106,10 @@ pub fn standard_deck() -> [Card; Suit::COUNT * Rank::COUNT] {
 
     for suit in Suit::iter() {
         for rank in Rank::iter() {
-            card_collector.push(Card {
-                rank,
-                suit
-            })
+            card_collector.push(Card { rank, suit })
         }
     }
 
     // Guaranteed to be coorect length of suits * ranks
-    card_collector.try_into().unwrap()  
+    card_collector.try_into().unwrap()
 }

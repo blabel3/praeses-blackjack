@@ -5,13 +5,13 @@ use std::io;
 pub enum PlayerType {
     HumanPlayer,
     AutoPlayer, // For computer-controlled additional players.
-    Dealer
+    Dealer,
 }
 
 #[derive(Debug)]
 pub enum Action {
-    Hit, 
-    Stand
+    Hit,
+    Stand,
 }
 
 impl Action {
@@ -20,7 +20,7 @@ impl Action {
         match input {
             "hit" | "h" => Self::Hit,
             "stand" | "s" => Self::Stand,
-            _ => panic!("WHY BLAKE")
+            _ => panic!("WHY BLAKE"),
         }
     }
 }
@@ -36,21 +36,21 @@ impl PlayerType {
 
 pub struct Player {
     player_type: PlayerType,
-    pub hand: Vec<cards::Card>
+    pub hand: Vec<cards::Card>,
 }
 
 impl Player {
     pub fn new() -> Player {
         Player {
             player_type: PlayerType::HumanPlayer,
-            hand: Vec::new()
+            hand: Vec::new(),
         }
     }
 
     pub fn new_dealer() -> Player {
         Player {
             player_type: PlayerType::Dealer,
-            hand: Vec::new()
+            hand: Vec::new(),
         }
     }
 
@@ -93,7 +93,6 @@ impl Player {
             }
         }
     }
-    
 
     pub fn get_action(&self) -> Action {
         match &self.player_type {
@@ -111,10 +110,8 @@ impl Player {
                 let action: Action = Action::parse_from_string(&action);
                 //println!("{:?}", action);
                 action
-            },
-            PlayerType::AutoPlayer => {
-                Action::Stand
-            }, 
+            }
+            PlayerType::AutoPlayer => Action::Stand,
             PlayerType::Dealer => {
                 if self.get_hand_value() >= 17 {
                     Action::Stand
@@ -124,5 +121,4 @@ impl Player {
             }
         }
     }
-
 }
