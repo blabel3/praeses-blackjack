@@ -83,6 +83,73 @@ impl InProgressGame {
             player.show_hand();
         }
     }
+
+    pub fn get_player_action(&self) {
+
+    }
+
+    pub fn play_round(&mut self) {
+
+        for player in &mut self.players {
+
+            loop {
+                self.dealer.show_hand();
+                player.show_hand(); //# compared to show hands
+
+                if player.get_hand_value() > 21 {
+                    println!("Bust!");
+                    break;
+                }
+
+                let action = player.get_action();
+
+                match action {
+                    player::Action::Hit => {
+                        let deal = self.deck.pop().unwrap();
+                        println!("NEW CARD: {}", deal);
+                        player.hand.push(deal);
+                    },
+                    player::Action::Stand => {
+                        break
+                    }
+                }
+                println!("")
+            }
+
+        }
+
+        if self.players.iter().all(|player| player.get_hand_value() > 21) {
+            println!("House wins!");
+            return ();
+        }
+
+        println!("---Dealer's turn!---");
+
+        loop {
+            self.dealer.show_dealer_hand();
+            //player.show_hand(); //# compared to show hands
+
+            if self.dealer.get_hand_value() > 21 {
+                println!("Dealer goes bust!");
+                break;
+            }
+
+            let action = self.dealer.get_action();
+
+            match action {
+                player::Action::Hit => {
+                    let deal = self.deck.pop().unwrap();
+                    self.dealer.hand.push(deal);
+                },
+                player::Action::Stand => {
+                    break
+                }
+            }
+        }
+
+        // dealer's turn
+
+    }
 }
 
 fn get_reshuffle_number(num_decks: &u32) -> u32 {
@@ -111,9 +178,13 @@ pub fn play_blackjack() {
     let game = ReadyGame::new(options);
 
     loop {
-        let round = game.deal_hands();
+        let mut round = game.deal_hands();
 
-        round.display_hands();
+        round.play_round();
+
+        
+
+        //round.display_hands();
 
 
 
