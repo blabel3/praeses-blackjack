@@ -6,6 +6,15 @@ pub enum PlayerType {
     Dealer
 }
 
+impl PlayerType {
+    pub fn should_hide_hand_value(&self) -> bool {
+        match self {
+            Self::HumanPlayer | Self::AutoPlayer => false,
+            Self::Dealer => true,
+        }
+    }
+}
+
 pub struct Player {
     player_type: PlayerType,
     pub hand: Vec<cards::Card>
@@ -26,6 +35,16 @@ impl Player {
         }
     }
 
+    pub fn get_hand_value(&self) -> u32 {
+        let values: Vec<u32> = self.hand.iter().map(|&card| card.value()).collect();
+        let sum = values.iter().sum();
+        if sum <= 11 && values.iter().any(|&x| x == 1) {
+            sum + 10
+        } else {
+            sum
+        }
+    }
+
     pub fn show_hand(&self) {
         match self.player_type {
             PlayerType::HumanPlayer | PlayerType::AutoPlayer => print!("Cards: {}", &self.hand[0]),
@@ -33,8 +52,13 @@ impl Player {
         }
 
         for card in &self.hand[1..] {
-            print!(", {}", card)
+            print!(", {}", card);
         }
-        println!("")
+
+        if !self.player_type.should_hide_hand_value() {
+            println!("     (value: {})", self.get_hand_value());
+        } else {
+            println!("");
+        }
     }
 }
