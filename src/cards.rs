@@ -82,6 +82,12 @@ pub struct Card{
     suit: Suit
 }
 
+impl Card {
+    pub fn value(&self) -> u32 {
+        self.rank.numeric_value()
+    }
+}
+
 impl fmt::Display for Card {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}{}", self.rank.simple_abbreviation(), self.suit.unicode_representation())
