@@ -38,7 +38,7 @@ impl Player {
     pub fn get_hand_value(&self) -> u32 {
         let mut values = self.hand.iter().map(|&card| card.value());
         let sum = values.clone().sum();
-        if sum <= 10 && values.any(|x| x == 1) {
+        if sum <= 11 && values.any(|x| x == 1) {
             sum + 10
         } else {
             sum
