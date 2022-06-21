@@ -90,7 +90,7 @@ impl InProgressGame {
                 self.dealer.show_hand();
                 player.show_hand(); //# compared to show hands
 
-                if player.get_hand_value() > 21 {
+                if player::get_hand_value(&player.hand[..]) > 21 {
                     println!("Bust!");
                     break;
                 }
@@ -112,7 +112,7 @@ impl InProgressGame {
         if self
             .players
             .iter()
-            .all(|player| player.get_hand_value() > 21)
+            .all(|player| player::get_hand_value(&player.hand[..]) > 21)
         {
             println!("House wins!");
             return ();
@@ -124,7 +124,7 @@ impl InProgressGame {
             self.dealer.show_dealer_hand();
             //player.show_hand(); //# compared to show hands
 
-            if self.dealer.get_hand_value() > 21 {
+            if player::get_hand_value(&self.dealer.hand[..]) > 21 {
                 println!("Dealer goes bust!");
                 break;
             }

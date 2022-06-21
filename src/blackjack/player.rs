@@ -39,6 +39,16 @@ pub struct Player {
     pub hand: Vec<cards::Card>,
 }
 
+pub fn get_hand_value(hand: &[cards::Card]) -> u32 {
+    let values: Vec<u32> = hand.iter().map(|&card| card.value()).collect();
+    let sum = values.iter().sum();
+    if sum <= 11 && values.iter().any(|&x| x == 1) {
+        sum + 10
+    } else {
+        sum
+    }
+}
+
 impl Player {
     pub fn new() -> Player {
         Player {
@@ -54,16 +64,6 @@ impl Player {
         }
     }
 
-    pub fn get_hand_value(&self) -> u32 {
-        let values: Vec<u32> = self.hand.iter().map(|&card| card.value()).collect();
-        let sum = values.iter().sum();
-        if sum <= 11 && values.iter().any(|&x| x == 1) {
-            sum + 10
-        } else {
-            sum
-        }
-    }
-
     pub fn show_hand(&self) {
         match self.player_type {
             PlayerType::HumanPlayer | PlayerType::AutoPlayer => print!("Cards: {}", &self.hand[0]),
@@ -75,7 +75,7 @@ impl Player {
         }
 
         if !self.player_type.should_hide_hand_value() {
-            println!("     (value: {})", self.get_hand_value());
+            println!("     (value: {})", get_hand_value(&self.hand[..]));
         } else {
             println!("");
         }
@@ -89,7 +89,7 @@ impl Player {
                 for card in &self.hand[1..] {
                     print!(", {}", card);
                 }
-                println!("     (value: {})", self.get_hand_value());
+                println!("     (value: {})", get_hand_value(&self.hand[..]));
             }
         }
     }
@@ -113,12 +113,61 @@ impl Player {
             }
             PlayerType::AutoPlayer => Action::Stand,
             PlayerType::Dealer => {
-                if self.get_hand_value() >= 17 {
+                if get_hand_value(&self.hand[..]) >= 17 {
                     Action::Stand
                 } else {
                     Action::Hit
                 }
             }
         }
+    }
+}
+
+
+pub trait BlackjackPlayer {
+    fn get_action(&self) -> Action;
+}
+
+pub struct Dealer {
+    pub hand: Vec<cards::Card>,
+}
+
+impl BlackjackPlayer for Dealer {
+    fn get_action(&self) -> Action {
+        if get_hand_value(&self.hand[..]) >= 17 {
+            Action::Stand
+        } else {
+            Action::Hit
+        }
+    }
+}
+
+impl Dealer {
+    pub fn new() -> Dealer {
+        Dealer {
+            hand: Vec::new()
+        }
+    }
+}
+
+pub struct HumanPlayer {
+    pub hand: Vec<cards::Card>,
+}
+
+impl BlackjackPlayer for HumanPlayer {
+    fn get_action(&self) -> Action {
+        let mut action = String::new();
+
+        println!("hit or stand?   ");
+
+        io::stdin()
+            .read_line(&mut action)
+            .expect("Failed to read line");
+
+        action = action.trim().to_string();
+
+        let action: Action = Action::parse_from_string(&action);
+        //println!("{:?}", action);
+        action
     }
 }
