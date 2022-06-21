@@ -5,24 +5,25 @@ use rand::thread_rng;
 use std::cmp;
 
 use crate::cards;
+use crate::blackjack::player::BlackjackPlayer;
 
-struct GameOptions {
-    num_players: u32,
-    num_decks: u32,
-    betting_ratio: f64,
+pub struct GameOptions {
+    pub num_players: u32,
+    pub num_decks: u32,
+    pub betting_ratio: f64,
 }
 
 struct ReadyGame {
-    players: Vec<player::Player>,
-    dealer: player::Player,
+    players: Vec<Box<dyn player::BlackjackPlayer>>,
+    dealer: player::Dealer,
     deck: Vec<cards::Card>,
     betting_ratio: f64,
     reshuffle_at: u32,
 }
 
 struct InProgressGame {
-    players: Vec<player::Player>,
-    dealer: player::Player,
+    players: Vec<Box<dyn player::BlackjackPlayer>>,
+    dealer: player::Dealer,
     deck: Vec<cards::Card>,
     betting_ratio: f64,
     reshuffle_at: u32,
@@ -30,10 +31,12 @@ struct InProgressGame {
 
 impl ReadyGame {
     pub fn new(options: GameOptions) -> ReadyGame {
-        let mut players: Vec<player::Player> = Vec::new();
+        let mut players: Vec<Box<dyn player::BlackjackPlayer>> = Vec::new();
 
         for _ in 0..options.num_players {
-            players.push(player::Player::new())
+            players.push(Box::new(
+                player::HumanPlayer::new()
+            ))
         }
 
         let mut deck: Vec<cards::Card> = Vec::new();
@@ -49,7 +52,7 @@ impl ReadyGame {
 
         ReadyGame {
             players,
-            dealer: player::Player::new_dealer(),
+            dealer: player::Dealer::new(),
             deck,
             betting_ratio: options.betting_ratio,
             reshuffle_at: get_reshuffle_number(&options.num_decks),
@@ -59,9 +62,9 @@ impl ReadyGame {
     pub fn deal_hands(mut self) -> InProgressGame {
         for _ in 0..2 {
             for player in &mut self.players {
-                player.hand.push(self.deck.pop().unwrap());
+                player.recieve_card(self.deck.pop().unwrap());
             }
-            self.dealer.hand.push(self.deck.pop().unwrap());
+            self.dealer.recieve_card(self.deck.pop().unwrap());
         }
 
         InProgressGame {
@@ -90,7 +93,7 @@ impl InProgressGame {
                 self.dealer.show_hand();
                 player.show_hand(); //# compared to show hands
 
-                if player::get_hand_value(&player.hand[..]) > 21 {
+                if get_hand_value(&player.get_hand()[..]) > 21 {
                     println!("Bust!");
                     break;
                 }
@@ -101,7 +104,7 @@ impl InProgressGame {
                     player::Action::Hit => {
                         let deal = self.deck.pop().unwrap();
                         println!("NEW CARD: {}", deal);
-                        player.hand.push(deal);
+                        player.recieve_card(deal);
                     }
                     player::Action::Stand => break,
                 }
@@ -112,7 +115,7 @@ impl InProgressGame {
         if self
             .players
             .iter()
-            .all(|player| player::get_hand_value(&player.hand[..]) > 21)
+            .all(|player| get_hand_value(&player.get_hand()[..]) > 21)
         {
             println!("House wins!");
             return ();
@@ -121,10 +124,10 @@ impl InProgressGame {
         println!("---Dealer's turn!---");
 
         loop {
-            self.dealer.show_dealer_hand();
+            self.dealer.show_true_hand();
             //player.show_hand(); //# compared to show hands
 
-            if player::get_hand_value(&self.dealer.hand[..]) > 21 {
+            if get_hand_value(&self.dealer.hand[..]) > 21 {
                 println!("Dealer goes bust!");
                 break;
             }
@@ -149,18 +152,24 @@ fn get_reshuffle_number(num_decks: &u32) -> u32 {
     cmp::max(40, num_decks * deck_card_count / 5)
 }
 
+pub fn get_hand_value(hand: &[cards::Card]) -> u32 {
+    let values: Vec<u32> = hand.iter().map(|&card| card.value()).collect();
+    let sum = values.iter().sum();
+    if sum <= 11 && values.iter().any(|&x| x == 1) {
+        sum + 10
+    } else {
+        sum
+    }
+}
+
 // Create game w/ game options
 
 // Play round
 
 // Optionally continue playing rounds (add/drop players)
 
-pub fn play_blackjack() {
-    let options = GameOptions {
-        num_players: 1,
-        num_decks: 1,
-        betting_ratio: 1.5,
-    };
+pub fn play_blackjack(options: GameOptions) {
+    
 
     let game = ReadyGame::new(options);
 
