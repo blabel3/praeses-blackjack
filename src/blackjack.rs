@@ -88,7 +88,7 @@ impl InProgressGame {
         }
     }
 
-    pub fn handle_blackjacks(&mut self) -> bool {
+    pub fn handle_blackjacks_self(&mut self) -> bool {
         let (mut players_w_bj, mut players_wo_bj): (Vec<_>, Vec<_>) = self.players
             .as_slice()
             .into_iter()
@@ -123,38 +123,44 @@ impl InProgressGame {
         return false;
     }
 
-    // Combine these two functions?
-    pub fn handle_player_action(action: player::Action, 
-        player: &mut Box<dyn BlackjackPlayer>,
-        deck: &mut Vec<cards::Card>) -> bool 
-    {
-        match action {
-            player::Action::Hit => {
-                let deal = deck.pop().unwrap();
-                println!("NEW CARD: {}", deal);
-                player.recieve_card(deal);
-                false
+    pub fn handle_blackjacks(players: &[Box<dyn player::BlackjackPlayer>], dealer: &player::Dealer) -> bool {
+        let (mut players_w_bj, mut players_wo_bj): (Vec<_>, Vec<_>) = players
+            .into_iter()
+            .partition(|player| hand_is_natural(&player.get_hand()[..]));
+            
+        if hand_is_natural(&dealer.get_hand()[..]) {
+            dealer.show_true_hand();
+            println!("Dealer has blackjack!");
+            for player in &mut players_w_bj {
+                player.show_hand();
+                println!("Standoff!");
+                // Handle bets
             }
-            player::Action::Stand => true,
+            for player in &mut players_wo_bj {
+                player.show_hand();
+                println!("You lost...");
+                // Handle bets
+            }
+            return true;
+        } else {
+            if players_w_bj.len() > 0 {
+                dealer.show_true_hand();
+                for player in &mut players_w_bj {
+                    player.show_hand();
+                    println!("Blackjack! You win");
+                    // Handle bets
+                }
+                return true;
+            }
         }
-    }
 
-    pub fn handle_dealer_action(&mut self, action: player::Action) -> bool 
-    {
-        match action {
-            player::Action::Hit => {
-                let deal = self.deck.pop().unwrap();
-                println!("Hit! NEW CARD: {}", deal);
-                self.dealer.recieve_card(deal);
-                false
-            }
-            player::Action::Stand => true,
-        }
+        return false;
     }
 
     pub fn play_round(&mut self) {
 
-        let round_over = self.handle_blackjacks();
+        //let round_over = self.handle_blackjacks();
+        let round_over = Self::handle_blackjacks(&self.players[..], &self.dealer);
 
         if round_over {
             return;
@@ -170,11 +176,11 @@ impl InProgressGame {
                     break;
                 }
 
-                let action = player.get_action();
-
-                if Self::handle_player_action(action, player, &mut self.deck) {
+                let turn = player.take_turn(&mut self.deck);
+                if turn {
                     break;
                 }
+
                 println!("")
             }
         }
@@ -211,9 +217,9 @@ impl InProgressGame {
                 return;
             }
 
-            let action = self.dealer.get_action();
+            let turn = self.dealer.take_turn(&mut self.deck);
 
-            if self.handle_dealer_action(action) {
+            if turn {
                 break;
             }
         }

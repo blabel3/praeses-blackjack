@@ -20,14 +20,31 @@ impl Action {
 }
 
 pub trait BlackjackPlayer {
-    fn get_action(&self) -> Action;
+    fn get_hand(&self) -> &Vec<cards::Card>;
 
     fn show_hand(&self) -> ();
 
-    fn get_hand(&self) -> &Vec<cards::Card>;
-
-    // Can probably turn new and this into a macro?
+    // Can probably turn new and this into a macro maybe?
     fn recieve_card(&mut self, card: cards::Card) -> ();
+
+    fn get_action(&self) -> Action;
+
+    fn handle_player_action(&mut self, action: Action, deck: &mut Vec<cards::Card>) -> bool {
+        match action {
+            Action::Hit => {
+                let deal = deck.pop().unwrap();
+                println!("Hit! NEW CARD: {}", deal);
+                self.recieve_card(deal);
+                false
+            }
+            Action::Stand => true,
+        }  
+    }
+
+    fn take_turn(&mut self, deck: &mut Vec<cards::Card>) -> bool {
+        let action = self.get_action();
+        self.handle_player_action(action, deck)
+    }
 
     // fn new() -> Self {
     //     Self {
