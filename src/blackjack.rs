@@ -127,6 +127,8 @@ impl InProgressGame {
         let (mut players_w_bj, mut players_wo_bj): (Vec<_>, Vec<_>) = players
             .into_iter()
             .partition(|player| hand_is_natural(&player.get_hand()[..]));
+
+        //Maybe a pattern match on the tuple instead?
             
         if hand_is_natural(&dealer.get_hand()[..]) {
             dealer.show_true_hand();
