@@ -1,3 +1,5 @@
+use rand::seq::SliceRandom;
+use rand::thread_rng;
 use std::fmt;
 use strum::{EnumCount, IntoEnumIterator};
 use strum_macros::{EnumCount as EnumCountMacro, EnumIter};
@@ -110,6 +112,17 @@ pub fn standard_deck() -> [Card; Suit::COUNT * Rank::COUNT] {
         }
     }
 
-    // Guaranteed to be coorect length of suits * ranks
+    // Guaranteed to be correct length of suits * ranks
     card_collector.try_into().unwrap()
+}
+
+pub fn get_shuffled_deck(num_decks: u32) -> Vec<Card> {
+    let mut deck: Vec<Card> = Vec::new();
+    let standard_deck = standard_deck();
+
+    for _ in 0..num_decks {
+        deck.extend_from_slice(&standard_deck);
+    }
+    deck.shuffle(&mut thread_rng());
+    deck
 }
