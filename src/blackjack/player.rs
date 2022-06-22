@@ -116,6 +116,16 @@ impl BlackjackPlayer for HumanPlayer {
         println!("     (value: {})", blackjack::get_hand_value(&self.hand[..]));
     }
 
+    //fn display_hand(&self) -> String {
+    //    let output: String = String::new();
+    //    output.push_str(&self.hand[0]);
+    //    //for card in &self.hand[1..] {
+    //    //    print!(", {}", card);
+    //    //}
+    //    putput
+    //    //println!("     (value: {})", blackjack::get_hand_value(&self.hand[..]));
+    //}
+
     fn recieve_card(&mut self, card: cards::Card) {
         self.hand.push(card);
     }
