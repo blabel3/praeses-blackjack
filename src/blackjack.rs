@@ -1,21 +1,28 @@
-mod player;
+//! Blackjack game functionality
+
+pub mod player;
 
 use std::cmp;
 use std::cmp::Ordering;
 
 use crate::cards;
 
+/// Options for running a game of blackjack.
 pub struct GameOptions {
+    /// How many players are at the table
     pub num_players: u32,
+    /// How many decks are used to create the deck (most popular is six for a 312 card game).
     pub num_decks: u32,
-    pub betting_ratio: f64,
+    /// Payout for winning in blackjack, usually 3:2 or 6:5.
+    /// Higher is better for the players, lower is better for the house.
+    pub payout_ratio: f64,
 }
 
 struct ReadyGame<D: player::BlackjackDealer> {
     players: Vec<Box<dyn player::BlackjackPlayer>>,
     dealer: D,
     deck: Vec<cards::Card>,
-    betting_ratio: f64,
+    payout_ratio: f64,
     reshuffle_at: u32,
 }
 
@@ -23,7 +30,7 @@ struct InProgressGame<D: player::BlackjackDealer> {
     players: Vec<Box<dyn player::BlackjackPlayer>>,
     dealer: D,
     deck: Vec<cards::Card>,
-    betting_ratio: f64,
+    payout_ratio: f64,
     reshuffle_at: u32,
 }
 
@@ -47,7 +54,7 @@ where
             players,
             dealer: D::new(),
             deck,
-            betting_ratio: options.betting_ratio,
+            payout_ratio: options.payout_ratio,
             reshuffle_at: get_reshuffle_number(&options.num_decks),
         }
     }
@@ -64,7 +71,7 @@ where
             players: self.players,
             dealer: self.dealer,
             deck: self.deck,
-            betting_ratio: self.betting_ratio,
+            payout_ratio: self.payout_ratio,
             reshuffle_at: self.reshuffle_at,
         }
     }
@@ -225,8 +232,26 @@ fn get_reshuffle_number(num_decks: &u32) -> u32 {
     cmp::max(40, num_decks * deck_card_count / 5)
 }
 
+fn card_value(card: &cards::Card) -> u32 {
+    match card.rank {
+        cards::Rank::Ace => 1,
+        cards::Rank::Two => 2,
+        cards::Rank::Three => 3,
+        cards::Rank::Four => 4,
+        cards::Rank::Five => 5,
+        cards::Rank::Six => 6,
+        cards::Rank::Seven => 7,
+        cards::Rank::Eight => 8,
+        cards::Rank::Nine => 9,
+        cards::Rank::Ten => 10,
+        cards::Rank::Jack => 10,
+        cards::Rank::Queen => 10,
+        cards::Rank::King => 10,
+    }
+}
+
 pub fn get_hand_value(hand: &[cards::Card]) -> u32 {
-    let values: Vec<u32> = hand.iter().map(|&card| card.value()).collect();
+    let values: Vec<u32> = hand.iter().map(|card| card_value(card)).collect();
     let sum = values.iter().sum();
     if sum <= 11 && values.iter().any(|&x| x == 1) {
         sum + 10

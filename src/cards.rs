@@ -1,3 +1,5 @@
+//! This module houses logic relating to cards and card value
+
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::fmt;
@@ -5,7 +7,7 @@ use strum::{EnumCount, IntoEnumIterator};
 use strum_macros::{EnumCount as EnumCountMacro, EnumIter};
 
 #[derive(EnumIter, EnumCountMacro, Copy, Clone, Debug)]
-enum Rank {
+pub enum Rank {
     Ace,
     Two,
     Three,
@@ -22,24 +24,6 @@ enum Rank {
 }
 
 impl Rank {
-    const fn numeric_value(&self) -> u32 {
-        match self {
-            Self::Ace => 1,
-            Self::Two => 2,
-            Self::Three => 3,
-            Self::Four => 4,
-            Self::Five => 5,
-            Self::Six => 6,
-            Self::Seven => 7,
-            Self::Eight => 8,
-            Self::Nine => 9,
-            Self::Ten => 10,
-            Self::Jack => 10,
-            Self::Queen => 10,
-            Self::King => 10,
-        }
-    }
-
     const fn simple_abbreviation(&self) -> &str {
         match self {
             Self::Ace => "A",
@@ -60,7 +44,7 @@ impl Rank {
 }
 
 #[derive(EnumIter, EnumCountMacro, Copy, Clone, Debug)]
-enum Suit {
+pub enum Suit {
     Club,
     Diamond,
     Heart,
@@ -80,14 +64,8 @@ impl Suit {
 
 #[derive(Debug, Copy, Clone)]
 pub struct Card {
-    rank: Rank,
-    suit: Suit,
-}
-
-impl Card {
-    pub fn value(&self) -> u32 {
-        self.rank.numeric_value()
-    }
+    pub rank: Rank,
+    pub suit: Suit,
 }
 
 impl fmt::Display for Card {

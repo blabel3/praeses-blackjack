@@ -1,10 +1,18 @@
+//! Logic for Blackjack players: how they decide what to do,
+//! what happens when they make their action, and all of that
+//! are here so that we can make players that behave differently
+//! that all act within the allowed moves in Blackjack.
+
 use crate::blackjack;
 use crate::cards;
 use std::io;
 
+/// Supported player actions.
 #[derive(Debug)]
 pub enum Action {
+    /// Hit: adds a card from the deck to your hand
     Hit,
+    /// Stand: keep the cards in your hand and pass to the next player
     Stand,
 }
 
@@ -88,16 +96,6 @@ impl BlackjackPlayer for HumanPlayer {
             blackjack::get_hand_value(&self.hand[..])
         );
     }
-
-    //fn display_hand(&self) -> String {
-    //    let output: String = String::new();
-    //    output.push_str(&self.hand[0]);
-    //    //for card in &self.hand[1..] {
-    //    //    print!(", {}", card);
-    //    //}
-    //    putput
-    //    //println!("     (value: {})", blackjack::get_hand_value(&self.hand[..]));
-    //}
 
     fn recieve_card(&mut self, card: cards::Card) {
         self.hand.push(card);

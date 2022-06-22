@@ -4,7 +4,7 @@ fn main() {
     let options = blackjack::GameOptions {
         num_players: 1,
         num_decks: 6,
-        betting_ratio: 1.5,
+        payout_ratio: 1.5,
     };
 
     blackjack::play_blackjack(options);
