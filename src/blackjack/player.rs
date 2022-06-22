@@ -1,5 +1,5 @@
-use crate::cards;
 use crate::blackjack;
+use crate::cards;
 use std::io;
 
 #[derive(Debug)]
@@ -38,7 +38,7 @@ pub trait BlackjackPlayer {
                 false
             }
             Action::Stand => true,
-        }  
+        }
     }
 
     fn take_turn(&mut self, deck: &mut Vec<cards::Card>) -> bool {
@@ -83,7 +83,10 @@ impl BlackjackPlayer for HumanPlayer {
         for card in &self.hand[1..] {
             print!(", {}", card);
         }
-        println!("     (value: {})", blackjack::get_hand_value(&self.hand[..]));
+        println!(
+            "     (value: {})",
+            blackjack::get_hand_value(&self.hand[..])
+        );
     }
 
     //fn display_hand(&self) -> String {
@@ -103,9 +106,7 @@ impl BlackjackPlayer for HumanPlayer {
 
 impl HumanPlayer {
     pub fn new() -> HumanPlayer {
-        HumanPlayer {
-            hand: Vec::new()
-        }
+        HumanPlayer { hand: Vec::new() }
     }
 }
 
@@ -144,7 +145,6 @@ impl BlackjackPlayer for Dealer {
     fn recieve_card(&mut self, card: cards::Card) {
         self.hand.push(card);
     }
-
 }
 
 impl BlackjackDealer for Dealer {
@@ -153,12 +153,13 @@ impl BlackjackDealer for Dealer {
         for card in &self.hand[1..] {
             print!(", {}", card);
         }
-        println!("     (value: {})", blackjack::get_hand_value(&self.hand[..]));
+        println!(
+            "     (value: {})",
+            blackjack::get_hand_value(&self.hand[..])
+        );
     }
 
     fn new() -> Dealer {
-        Dealer {
-            hand: Vec::new()
-        }
+        Dealer { hand: Vec::new() }
     }
 }
