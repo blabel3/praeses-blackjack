@@ -46,59 +46,11 @@ pub trait BlackjackPlayer {
         self.handle_player_action(action, deck)
     }
 
-    // fn new() -> Self {
-    //     Self {
-    //         hand: Vec::new()
-    //     }
-    // }
-}
-
-pub struct Dealer {
-    pub hand: Vec<cards::Card>,
-}
-
-// Dealer probably doesn't need to implement this actually...
-impl BlackjackPlayer for Dealer {
-    fn get_action(&self) -> Action {
-        if blackjack::get_hand_value(&self.hand[..]) >= 17 {
-            Action::Stand
-        } else {
-            Action::Hit
-        }
-    }
-
-    fn get_hand(&self) -> &Vec<cards::Card> {
-        &self.hand
-    }
-
-    fn show_hand(&self) {
-        print!("Dealer's Cards: **");
-        for card in &self.hand[1..] {
-            print!(", {}", card);
-        }
-        println!("");
-    }
-
-    fn recieve_card(&mut self, card: cards::Card) {
-        self.hand.push(card);
-    }
-}
-
-impl Dealer {
-    pub fn new() -> Dealer {
-        Dealer { hand: Vec::new() }
-    }
-
-    pub fn show_true_hand(&self) {
-        print!("Dealer's Cards: {}", &self.hand[0]);
-        for card in &self.hand[1..] {
-            print!(", {}", card);
-        }
-        println!(
-            "     (value: {})",
-            blackjack::get_hand_value(&self.hand[..])
-        );
-    }
+    //fn new() -> Self {
+    //    Self {
+    //        hand: Vec::new()
+    //    }
+    //}
 }
 
 pub struct HumanPlayer {
@@ -155,5 +107,59 @@ impl BlackjackPlayer for HumanPlayer {
 impl HumanPlayer {
     pub fn new() -> HumanPlayer {
         HumanPlayer { hand: Vec::new() }
+    }
+}
+
+pub trait BlackjackDealer: BlackjackPlayer {
+    fn show_true_hand(&self);
+
+    fn new() -> Self;
+}
+
+pub struct Dealer {
+    pub hand: Vec<cards::Card>,
+}
+
+// Dealer probably doesn't need to implement this actually...
+impl BlackjackPlayer for Dealer {
+    fn get_action(&self) -> Action {
+        if blackjack::get_hand_value(&self.hand[..]) >= 17 {
+            Action::Stand
+        } else {
+            Action::Hit
+        }
+    }
+
+    fn get_hand(&self) -> &Vec<cards::Card> {
+        &self.hand
+    }
+
+    fn show_hand(&self) {
+        print!("Dealer's Cards: **");
+        for card in &self.hand[1..] {
+            print!(", {}", card);
+        }
+        println!("");
+    }
+
+    fn recieve_card(&mut self, card: cards::Card) {
+        self.hand.push(card);
+    }
+}
+
+impl BlackjackDealer for Dealer {
+    fn show_true_hand(&self) {
+        print!("Dealer's Cards: {}", &self.hand[0]);
+        for card in &self.hand[1..] {
+            print!(", {}", card);
+        }
+        println!(
+            "     (value: {})",
+            blackjack::get_hand_value(&self.hand[..])
+        );
+    }
+
+    fn new() -> Dealer {
+        Dealer { hand: Vec::new() }
     }
 }
