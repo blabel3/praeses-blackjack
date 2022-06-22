@@ -5,6 +5,7 @@ use rand::thread_rng;
 use std::cmp;
 use std::cmp::Ordering;
 
+use crate::blackjack::player::BlackjackPlayer;
 use crate::cards;
 
 pub struct GameOptions {
