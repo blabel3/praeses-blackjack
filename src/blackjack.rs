@@ -6,7 +6,6 @@ use std::cmp;
 use std::cmp::Ordering;
 
 use crate::cards;
-use crate::blackjack::player::BlackjackPlayer;
 
 pub struct GameOptions {
     pub num_players: u32,
@@ -14,17 +13,17 @@ pub struct GameOptions {
     pub betting_ratio: f64,
 }
 
-struct ReadyGame {
+struct ReadyGame<D: player::BlackjackDealer> {
     players: Vec<Box<dyn player::BlackjackPlayer>>,
-    dealer: player::Dealer,
+    dealer: D,
     deck: Vec<cards::Card>,
     betting_ratio: f64,
     reshuffle_at: u32,
 }
 
-struct InProgressGame {
+struct InProgressGame<D: player::BlackjackDealer> {
     players: Vec<Box<dyn player::BlackjackPlayer>>,
-    dealer: player::Dealer,
+    dealer: D,
     deck: Vec<cards::Card>,
     betting_ratio: f64,
     reshuffle_at: u32,
@@ -32,8 +31,8 @@ struct InProgressGame {
 
 // Round Results output with who wins/loses?
 
-impl ReadyGame {
-    pub fn new(options: GameOptions) -> ReadyGame {
+impl<D> ReadyGame<D> where D: player::BlackjackDealer {
+    pub fn new(options: GameOptions) -> ReadyGame<D> {
         let mut players: Vec<Box<dyn player::BlackjackPlayer>> = Vec::new();
 
         for _ in 0..options.num_players {
@@ -55,14 +54,14 @@ impl ReadyGame {
 
         ReadyGame {
             players,
-            dealer: player::Dealer::new(),
+            dealer: D::new(),
             deck,
             betting_ratio: options.betting_ratio,
             reshuffle_at: get_reshuffle_number(&options.num_decks),
         }
     }
 
-    pub fn deal_hands(mut self) -> InProgressGame {
+    pub fn deal_hands(mut self) -> InProgressGame<D> {
         for _ in 0..2 {
             for player in &mut self.players {
                 player.recieve_card(self.deck.pop().unwrap());
@@ -80,7 +79,7 @@ impl ReadyGame {
     }
 }
 
-impl InProgressGame {
+impl<D> InProgressGame<D> where D: player::BlackjackDealer {
     pub fn display_hands(&self) {
         self.dealer.show_hand();
         for player in &self.players {
@@ -123,7 +122,7 @@ impl InProgressGame {
         return false;
     }
 
-    pub fn handle_blackjacks(players: &[Box<dyn player::BlackjackPlayer>], dealer: &player::Dealer) -> bool {
+    pub fn handle_blackjacks(players: &[Box<dyn player::BlackjackPlayer>], dealer: &D) -> bool {
         let (mut players_w_bj, mut players_wo_bj): (Vec<_>, Vec<_>) = players
             .into_iter()
             .partition(|player| hand_is_natural(&player.get_hand()[..]));
@@ -205,7 +204,7 @@ impl InProgressGame {
 
             if hand_is_bust(&self.dealer.get_hand()[..]) {
                 println!("Dealer goes bust!");
-                self.dealer.hand.clear();
+                // self.dealer.hand.clear();
                 let winning_players: Vec<_> = self.players
                     .as_slice()
                     .into_iter()
@@ -285,7 +284,7 @@ pub fn hand_is_bust(hand: &[cards::Card]) -> bool {
 pub fn play_blackjack(options: GameOptions) {
     
 
-    let game = ReadyGame::new(options);
+    let game: ReadyGame<player::Dealer> = ReadyGame::new(options);
 
     loop {
         let mut round = game.deal_hands();
@@ -297,3 +296,4 @@ pub fn play_blackjack(options: GameOptions) {
         break;
     }
 }
+
