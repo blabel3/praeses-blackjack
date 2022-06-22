@@ -3,6 +3,7 @@ mod player;
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 use std::cmp;
+use std::cmp::Ordering;
 
 use crate::cards;
 use crate::blackjack::player::BlackjackPlayer;
@@ -28,6 +29,8 @@ struct InProgressGame {
     betting_ratio: f64,
     reshuffle_at: u32,
 }
+
+// Round Results output with who wins/loses?
 
 impl ReadyGame {
     pub fn new(options: GameOptions) -> ReadyGame {
@@ -85,40 +88,113 @@ impl InProgressGame {
         }
     }
 
-    pub fn get_player_action(&self) {}
+    pub fn handle_blackjacks_self(&mut self) -> bool {
+        let (mut players_w_bj, mut players_wo_bj): (Vec<_>, Vec<_>) = self.players
+            .as_slice()
+            .into_iter()
+            .partition(|player| hand_is_natural(&player.get_hand()[..]));
+            
+        if hand_is_natural(&self.dealer.get_hand()[..]) {
+            self.dealer.show_true_hand();
+            println!("Dealer has blackjack!");
+            for player in &mut players_w_bj {
+                player.show_hand();
+                println!("Standoff!");
+                // Handle bets
+            }
+            for player in &mut players_wo_bj {
+                player.show_hand();
+                println!("You lost...");
+                // Handle bets
+            }
+            return true;
+        } else {
+            if players_w_bj.len() > 0 {
+                self.dealer.show_true_hand();
+                for player in &mut players_w_bj {
+                    player.show_hand();
+                    println!("Blackjack! You win");
+                    // Handle bets
+                }
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    pub fn handle_blackjacks(players: &[Box<dyn player::BlackjackPlayer>], dealer: &player::Dealer) -> bool {
+        let (mut players_w_bj, mut players_wo_bj): (Vec<_>, Vec<_>) = players
+            .into_iter()
+            .partition(|player| hand_is_natural(&player.get_hand()[..]));
+
+        //Maybe a pattern match on the tuple instead?
+            
+        if hand_is_natural(&dealer.get_hand()[..]) {
+            dealer.show_true_hand();
+            println!("Dealer has blackjack!");
+            for player in &mut players_w_bj {
+                player.show_hand();
+                println!("Standoff!");
+                // Handle bets
+            }
+            for player in &mut players_wo_bj {
+                player.show_hand();
+                println!("You lost...");
+                // Handle bets
+            }
+            return true;
+        } else {
+            if players_w_bj.len() > 0 {
+                dealer.show_true_hand();
+                for player in &mut players_w_bj {
+                    player.show_hand();
+                    println!("Blackjack! You win");
+                    // Handle bets
+                }
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     pub fn play_round(&mut self) {
+
+        //let round_over = self.handle_blackjacks();
+        let round_over = Self::handle_blackjacks(&self.players[..], &self.dealer);
+
+        if round_over {
+            return;
+        }
+
         for player in &mut self.players {
             loop {
                 self.dealer.show_hand();
                 player.show_hand(); //# compared to show hands
 
-                if get_hand_value(&player.get_hand()[..]) > 21 {
+                if hand_is_bust(&player.get_hand()[..]) {
                     println!("Bust!");
                     break;
                 }
 
-                let action = player.get_action();
-
-                match action {
-                    player::Action::Hit => {
-                        let deal = self.deck.pop().unwrap();
-                        println!("NEW CARD: {}", deal);
-                        player.recieve_card(deal);
-                    }
-                    player::Action::Stand => break,
+                let turn = player.take_turn(&mut self.deck);
+                if turn {
+                    break;
                 }
+
                 println!("")
             }
         }
 
-        if self
-            .players
-            .iter()
-            .all(|player| get_hand_value(&player.get_hand()[..]) > 21)
-        {
+        let standing_players: Vec<_> = self.players
+            .as_slice()
+            .into_iter()
+            .filter(|player| !hand_is_bust(&player.get_hand()[..])).collect();
+
+        if standing_players.len() == 0 {
             println!("House wins!");
-            return ();
+            return;
         }
 
         println!("---Dealer's turn!---");
@@ -127,23 +203,58 @@ impl InProgressGame {
             self.dealer.show_true_hand();
             //player.show_hand(); //# compared to show hands
 
-            if get_hand_value(&self.dealer.hand[..]) > 21 {
+            if hand_is_bust(&self.dealer.get_hand()[..]) {
                 println!("Dealer goes bust!");
-                break;
+                self.dealer.hand.clear();
+                let winning_players: Vec<_> = self.players
+                    .as_slice()
+                    .into_iter()
+                    .filter(|player| !hand_is_bust(&player.get_hand()[..])).collect();
+    
+                for player in winning_players {
+                    player.show_hand();
+                    println!("You win!");
+                    // Handle bet
+                }
+                return;
             }
 
-            let action = self.dealer.get_action();
+            let turn = self.dealer.take_turn(&mut self.deck);
 
-            match action {
-                player::Action::Hit => {
-                    let deal = self.deck.pop().unwrap();
-                    self.dealer.hand.push(deal);
-                }
-                player::Action::Stand => break,
+            if turn {
+                break;
             }
         }
 
-        // dealer's turn
+        let mut standing_players: Vec<_> = self.players
+            .as_slice()
+            .into_iter()
+            .filter(|player| !hand_is_bust(&player.get_hand()[..])).collect();
+
+        //let (mut _bust_players, mut alive_players): (Vec<_>, Vec<_>) = self.players
+        //    .as_slice()
+        //    .into_iter()
+        //    .partition(|player| hand_is_bust(&player.get_hand()[..]));
+
+        for player in &mut standing_players {
+            player.show_hand();
+            match get_hand_value(&player.get_hand()[..])
+                .cmp(&get_hand_value(&self.dealer.get_hand()[..])) {
+                Ordering::Less => {
+                    //player.show_hand();
+                    println!("You lose...");
+                },
+                Ordering::Greater => {
+                    //player.show_hand();
+                    println!("You win!");
+                },
+                Ordering::Equal => {
+                    //player.show_hand();
+                    println!("Stand-off.");
+                },
+            }
+        }
+
     }
 }
 
@@ -162,11 +273,14 @@ pub fn get_hand_value(hand: &[cards::Card]) -> u32 {
     }
 }
 
-// Create game w/ game options
+pub fn hand_is_natural(hand: &[cards::Card]) -> bool {
+    get_hand_value(&hand) == 21
+}
 
-// Play round
+pub fn hand_is_bust(hand: &[cards::Card]) -> bool {
+    get_hand_value(&hand) > 21
+}
 
-// Optionally continue playing rounds (add/drop players)
 
 pub fn play_blackjack(options: GameOptions) {
     
@@ -178,7 +292,7 @@ pub fn play_blackjack(options: GameOptions) {
 
         round.play_round();
 
-        //round.display_hands();
+        // Optionally continue playing rounds (and add/drop players?)
 
         break;
     }
