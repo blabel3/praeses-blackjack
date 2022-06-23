@@ -73,6 +73,9 @@ pub struct Card {
     pub suit: Suit,
 }
 
+/// `Vec<Card>`: A List of cards is a deck. Can be any size as cards get dealt out!
+pub type Deck = Vec<Card>;
+
 impl fmt::Display for Card {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(

@@ -35,6 +35,10 @@ impl Action {
 pub trait BlackjackPlayer {
     fn get_hand(&self) -> &Vec<cards::Card>;
 
+    fn get_hand_slice(&self) -> &[cards::Card] {
+        self.get_hand().as_slice()
+    }
+
     fn show_hand(&self) -> ();
 
     // Can probably turn new and this into a macro maybe?
