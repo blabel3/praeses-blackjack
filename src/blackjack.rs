@@ -1,5 +1,6 @@
 mod player;
 
+use std::fmt;
 use std::cmp;
 use std::cmp::Ordering;
 
@@ -16,6 +17,16 @@ pub enum PlayerRoundResult {
     Win,
     Lose,
     Standoff,
+}
+
+impl fmt::Display for PlayerRoundResult {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            PlayerRoundResult::Win => write!(f, "You win! Congratulations! :)"),
+            PlayerRoundResult::Lose => write!(f, "You lose, sorry. Thanks for playing!"),
+            PlayerRoundResult::Standoff => write!(f, "It's a stand-off!"),
+        }
+    }
 }
 
 type PlayerResult = (Box<dyn player::BlackjackPlayer>, PlayerRoundResult);
@@ -226,11 +237,6 @@ where
     }
 }
 
-fn get_reshuffle_number(num_decks: &u32) -> u32 {
-    let deck_card_count = u32::try_from(cards::STANDARD_DECK_COUNT).unwrap();
-    cmp::max(40, num_decks * deck_card_count / 5)
-}
-
 pub fn get_hand_value(hand: &[cards::Card]) -> u32 {
     let values: Vec<u32> = hand.iter().map(|&card| card.value()).collect();
     let sum = values.iter().sum();
@@ -249,6 +255,19 @@ pub fn hand_is_bust(hand: &[cards::Card]) -> bool {
     get_hand_value(&hand) > 21
 }
 
+fn settle_round(round_results: RoundResult) {
+    println!("");
+    for (_player, result) in round_results {
+        //player.show_hand();
+        println!("{}", result);
+    }
+}
+
+fn get_reshuffle_number(num_decks: &u32) -> u32 {
+    let deck_card_count = u32::try_from(cards::STANDARD_DECK_COUNT).unwrap();
+    cmp::max(40, num_decks * deck_card_count / 5)
+}
+
 pub fn play_blackjack(options: GameOptions) {
     let game: ReadyGame<player::Dealer> = ReadyGame::new(&options);
 
@@ -260,12 +279,7 @@ pub fn play_blackjack(options: GameOptions) {
 
         let round_results = round.play_round();
 
-        for (_player, result) in round_results {
-            //player.show_hand();
-            println!("{:?}", result);
-        }
-
-        //println!("{:#?}", round_results);
+        settle_round(round_results);
 
         // Optionally continue playing rounds (and add/drop players?)
 
