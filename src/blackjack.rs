@@ -221,11 +221,22 @@ where
     }
 }
 
+/// Gets the point at which the deck needs to be reshuffled. Basically acts like the 
+/// plastic card in a deck in a casino--if the deck length is below this number 
+/// then we need to get a new full reshuffled deck for the next game.__rust_force_expr!
+/// 
+/// # Arguments
+/// 
+/// * `num_decks` - number of decks used to create the deck for the game. Should be same 
+/// value that's passed into `cards::create_multideck(num_decks)`
 fn get_reshuffle_number(num_decks: &u32) -> u32 {
     let deck_card_count = u32::try_from(cards::STANDARD_DECK_COUNT).unwrap();
     cmp::max(40, num_decks * deck_card_count / 5)
 }
 
+/// Given a card, return it's numeric value in Blackjack. 
+/// Aces count as 1, and will get the extra 10 if it doesn't make the player go bust 
+/// when taking their whole hand value into account. 
 fn card_value(card: &cards::Card) -> u32 {
     match card.rank {
         cards::Rank::Ace => 1,
@@ -244,6 +255,7 @@ fn card_value(card: &cards::Card) -> u32 {
     }
 }
 
+/// For a slice of cards, return the value of the hand (properly handling Aces)
 pub fn get_hand_value(hand: &[cards::Card]) -> u32 {
     let values: Vec<u32> = hand.iter().map(|card| card_value(card)).collect();
     let sum = values.iter().sum();
@@ -254,14 +266,17 @@ pub fn get_hand_value(hand: &[cards::Card]) -> u32 {
     }
 }
 
+/// For a slice of cards, return true if the value of the hand is exactly 21 and there are only 2 cards in the hand.
 pub fn hand_is_natural(hand: &[cards::Card]) -> bool {
-    get_hand_value(&hand) == 21
+    get_hand_value(&hand) == 21 && hand.len() == 2
 }
 
+/// For a slice of cards, return true if the value of the hand is over 21. 
 pub fn hand_is_bust(hand: &[cards::Card]) -> bool {
     get_hand_value(&hand) > 21
 }
 
+/// From a GameOptions describing the settings of the game, play a full game of blackjack. 
 pub fn play_blackjack(options: GameOptions) {
     let game: ReadyGame<player::Dealer> = ReadyGame::new(&options);
 
