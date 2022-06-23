@@ -1,6 +1,6 @@
 //! Logic for Blackjack players: how they decide what to do and
-//! what happens when they make their action are here. Using this, 
-//! you can create players that behave differently but all act 
+//! what happens when they make their action are here. Using this,
+//! you can create players that behave differently but all act
 //! within the allowed moves in Blackjack.
 
 use crate::blackjack;
@@ -32,7 +32,7 @@ impl Action {
     }
 }
 
-/// A trait representing behavior every player in a game of blackjack should be able to handle. 
+/// A trait representing behavior every player in a game of blackjack should be able to handle.
 pub trait BlackjackPlayer {
     /// Get a reference to the player's hand, all the cards they have.
     fn get_hand(&self) -> &cards::Hand;
@@ -80,7 +80,7 @@ pub trait BlackjackPlayer {
     //}
 }
 
-/// A player controlled by a human and their input into the commandline. Their output is sent to stdout. 
+/// A player controlled by a human and their input into the commandline. Their output is sent to stdout.
 pub struct HumanPlayer {
     hand: cards::Hand,
 }
@@ -132,7 +132,7 @@ impl HumanPlayer {
     }
 }
 
-/// A trait representing the dealer in a game of blackjack. 
+/// A trait representing the dealer in a game of blackjack.
 /// They act similarly to players, but with a bit more behaviors needed.
 pub trait BlackjackDealer: BlackjackPlayer {
     /// Shows the tur ehand of the dealer (because usually their complete hand will be hidden from players).
@@ -142,7 +142,7 @@ pub trait BlackjackDealer: BlackjackPlayer {
     fn new() -> Self;
 }
 
-/// A standard dealer whose output is sent to stdout. 
+/// A standard dealer whose output is sent to stdout.
 pub struct Dealer {
     hand: cards::Hand,
 }
