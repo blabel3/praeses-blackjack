@@ -67,14 +67,14 @@ impl BlackjackPlayer for HumanPlayer {
             let mut input = String::new();
 
             io::stdin()
-            .read_line(&mut input)
-            .expect("Failed to read line");
+                .read_line(&mut input)
+                .expect("Failed to read line");
 
             input = input.trim().to_string();
 
             match Action::parse_from_string(&input) {
                 Ok(action) => return action,
-                Err(e) => println!("{}, try again.", e)
+                Err(e) => println!("{}, try again.", e),
             }
         }
     }
