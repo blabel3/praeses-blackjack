@@ -1,22 +1,12 @@
-# praeses-blackjack-rust
-Blackjack cli in Rust
+# praeses-blackjack-rust [![Build & Test](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/rust-build-test.yml/badge.svg)](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/rust-build-test.yml)
 
-
-Topics:
-
-    Pre-requisites (commandline ability)
-    Installation
-    Getting started
-    Additional features implemented
-    Badges (devops tests, builds, deployments)
-    Demo link if that becomes a thing, otherwise, recording of game.
-
+(demo video or screenshot here)
 
 # Praeses Blackjack
 
 *Created in a week for part of the software engineer interview process at [Praeses](https://praeses.com/)* 
 
-Website that lets people generate unique album covers for their spotify playlists. Currently spotify's automatic playlist covers are just some of the album arts stitched together, and the creator has to go and make an image themself if they want something memorable for it. Our app would make an album cover that fits the playlist given the moods of the songs automatically. It will use infortmation from the Spotify API like the lyric keywords, key, bpm, dancability, and song titles to determine images, shapes and colors to use. It will also use image APIs like Unsplash or Artbreeder to find cool images to include in the playlist cover.
+Rust crate that lets people play blackjack in their terminal. Made with the idea of extending later to support additional players and possibly a web client that interacts with this running on a server. But the main priority was to write good, readable, maintainable, efficient code to flex for Praeses!
 
 # Table of Contents
 
@@ -27,49 +17,41 @@ Website that lets people generate unique album covers for their spotify playlist
 
 # Installing
 
-### Pre-Requisites
+## Ready-made Binary
 
-- This project uses Node: install [Node.js](https://nodejs.org/en/download/) (this will also install npm!)
+You can go to the releases section to download binaries that you can execute one whatever system you're running. 
 
-- Know how to run things on the commandline
+You can then put that in your bin/ folder or wherever executables are available for you!
 
-Once Node is installed, open up your command line and navigate to this project folder. Node uses npm (the Node Package Manager) to install dependencies. Our dependencies are stuff like Express which lets us run a web server, or Typescript which helps us write better code. To install all the dependencies for our project, run this command:
+## Installing with Rust (recommended)
 
-```console
-$ npm install
+### Pre-Requisite
+
+Have a commandline environment you're comfortable with, and install [Rust](https://www.rust-lang.org/tools/install)
+
+### Installing via Cargo
+
+Until I release this in a package repository, we will just have to install from the source! Run these commands in your terminal:
+
 ```
-
-It will make a folder called node_modules with all the code from our dependencies. You only need to run npm install when we add new dependencies or remove old dependencies. If there's an error where it can't find some module, it's a good idea to run `npm install` again.
+$ git clone https://github.com/blabel3/praeses-blackjack-rust
+$ cd praeses-blackjack-rust
+$ cargo install --path . 
+``` 
 
 # Running
 
-All of the scripts necessary to run the project are listed in the [package.json](package.json) file under "scripts". To run the project, we're going to use two of those scripts:
-
-```console
-$ npm run build
-```
-
-This takes all of our source code in src/ and builds it, converting the typescript into well-optimized javascript for us.
-
-Then, to start the web server, run this command:
-
-```console
-$ npm run start
-```
-
-This will start the web server, and show a link to where it is running locally. Then all you have to do is click it and you're set, hooray! The terminal window will show any errors on the server, and you can test everything in the browser.
+Once the executable is installed, you should be able to run it by entering `pbj` in your terminal.
 
 # Contributing
 
-To make edits to the code, first, make sure you're in a new branch! The repo is set up to not allow commits directly on main so that none of us accidentally break everything.
+To contribute to the project, first set up your environment by following the directions from [Installing with Rust](#Installing-with-Rust-(recommended))
 
-Then you can make your changes! Using `npm run dev` is a good way to test locally, since it will restart the server every time a change is made to the code. This way you don't have to stop the server, build again, and restart the server.
+To make edits to the code, first, make sure you're in a new branch! The repo is set up to not allow commits directly on main to make sure the main branch is stable.
 
-Then, you can make your edits (probably to files in src/ and test/) and commit + push them. Then, on github make a Pull Request to get them merged in.
+Pick out an issue in the repo's issues to tackle, and think carefully about how to change the code to best handle it. 
 
-It'll automatically test the code in the PR, and lets people have a chance to look at the code, add in anything that's missing, etc.
+Then you can make your changes! Remember it can be a good idea to run `cargo check` periodically, and before you commit it's also good to run `cargo fmt` so that the code is formatted consistently. 
 
-# Demo
-
-Will paste in demo later
+Once your changes are ready make a pull request and someone will review, approve, and merge it in.
 
