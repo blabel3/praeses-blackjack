@@ -12,28 +12,31 @@ pub struct GameOptions {
 }
 
 #[derive(Debug, Copy, Clone)]
-pub enum RoundResult {
+pub enum PlayerRoundResult {
     Win,
     Lose,
     Standoff,
 }
 
-type PlayerResult = (Box<dyn player::BlackjackPlayer>, RoundResult);
+type PlayerResult = (Box<dyn player::BlackjackPlayer>, PlayerRoundResult);
+
+type RoundResult = Vec<PlayerResult>;
+
+enum IntermediateRoundResult<D: player::BlackjackDealer> {
+    Finished(RoundResult),
+    Unfinished(InProgressGame<D>),
+}
 
 struct ReadyGame<D: player::BlackjackDealer> {
     players: Vec<Box<dyn player::BlackjackPlayer>>,
     dealer: D,
     deck: Vec<cards::Card>,
-    betting_ratio: f64,
-    reshuffle_at: u32,
 }
 
 struct InProgressGame<D: player::BlackjackDealer> {
     players: Vec<Box<dyn player::BlackjackPlayer>>,
     dealer: D,
     deck: Vec<cards::Card>,
-    betting_ratio: f64,
-    reshuffle_at: u32,
 }
 
 // Round Results output with who wins/loses?
@@ -56,8 +59,6 @@ where
             players,
             dealer: D::new(),
             deck,
-            betting_ratio: options.betting_ratio,
-            reshuffle_at: get_reshuffle_number(&options.num_decks),
         }
     }
 
@@ -73,25 +74,16 @@ where
             players: self.players,
             dealer: self.dealer,
             deck: self.deck,
-            betting_ratio: self.betting_ratio,
-            reshuffle_at: self.reshuffle_at,
         }
     }
 }
 
-impl<'a, D: 'a> InProgressGame<D>
+impl<D> InProgressGame<D>
 where
     D: player::BlackjackDealer,
 {
-    pub fn display_hands(&self) {
-        self.dealer.show_hand();
-        for player in &self.players {
-            player.show_hand();
-        }
-    }
-
-    fn handle_naturals(self) -> Vec<PlayerResult> {
-        let mut game_over_results: Vec<PlayerResult> = Vec::new();
+    fn handle_naturals(self) -> IntermediateRoundResult<D> {
+        let mut round_results: RoundResult = Vec::new();
         let dealer_has_natural = hand_is_natural(&self.dealer.get_hand()[..]);
 
         if dealer_has_natural {
@@ -100,27 +92,27 @@ where
             for player in self.players {
                 let player_has_natural = hand_is_natural(&player.get_hand()[..]);
                 if player_has_natural {
-                    game_over_results.push((player, RoundResult::Standoff));
+                    round_results.push((player, PlayerRoundResult::Standoff));
                 } else {
-                    game_over_results.push((player, RoundResult::Lose));
+                    round_results.push((player, PlayerRoundResult::Lose));
                 }
             }
-            return game_over_results;
+            return IntermediateRoundResult::Finished(round_results);
         } else {
             let all_players_have_blackjack = &self.players[..]
                 .into_iter()
                 .all(|player| hand_is_natural(&player.get_hand()[..]));
             if *all_players_have_blackjack {
                 for player in self.players {
-                    game_over_results.push((player, RoundResult::Win));
+                    round_results.push((player, PlayerRoundResult::Win));
                 }
-                return game_over_results;
+                return IntermediateRoundResult::Finished(round_results);
             }
         }
-        self.player_turns()
+        IntermediateRoundResult::Unfinished(self)
     }
 
-    fn player_turns(mut self) -> Vec<PlayerResult> {
+    fn player_turns(&mut self) {
         for player in &mut self.players {
             println!("---Player's turn!---");
             if hand_is_natural(&player.get_hand()[..]) {
@@ -143,136 +135,94 @@ where
                 println!("")
             }
         }
-        self.check_if_all_players_finished()
     }
 
-    fn check_if_all_players_finished(self) -> Vec<PlayerResult> {
+    fn check_if_all_players_finished(self) -> IntermediateRoundResult<D> {
         let all_done: bool = self.players[..].into_iter().all(|player| {
             hand_is_bust(&player.get_hand()[..]) || hand_is_natural(&player.get_hand()[..])
         });
 
-        // Needed to maintain player order and look normal, instead of using partition above.
         if all_done {
-            let mut game_over_results: Vec<PlayerResult> = Vec::new();
+            let mut round_results: RoundResult = Vec::new();
             for player in self.players {
                 if hand_is_natural(&player.get_hand()[..]) {
-                    game_over_results.push((player, RoundResult::Win))
+                    round_results.push((player, PlayerRoundResult::Win))
                 } else {
-                    game_over_results.push((player, RoundResult::Lose))
+                    round_results.push((player, PlayerRoundResult::Lose))
                 }
             }
-            return game_over_results;
+            return IntermediateRoundResult::Finished(round_results);
         }
-        self.dealer_turn()
+        IntermediateRoundResult::Unfinished(self)
     }
 
-    fn dealer_turn(mut self) -> Vec<PlayerResult> {
+    fn dealer_turn(mut self) -> IntermediateRoundResult<D> {
         println!("---Dealer's turn!---");
         loop {
             self.dealer.show_true_hand();
             if hand_is_bust(&self.dealer.get_hand()[..]) {
                 println!("Dealer goes bust!");
-                let mut game_over_results: Vec<PlayerResult> = Vec::new();
+                let mut round_results: RoundResult = Vec::new();
                 for player in self.players {
                     if hand_is_bust(&player.get_hand()) {
-                        game_over_results.push((player, RoundResult::Lose))
+                        round_results.push((player, PlayerRoundResult::Lose))
                     } else {
-                        game_over_results.push((player, RoundResult::Win))
+                        round_results.push((player, PlayerRoundResult::Win))
                     }
                 }
-                return game_over_results;
+                return IntermediateRoundResult::Finished(round_results);
             }
             let turn_over = self.dealer.take_turn(&mut self.deck);
             if turn_over {
                 break;
             }
         }
-
-        self.complete_round()
+        return IntermediateRoundResult::Unfinished(self);
     }
 
-    fn complete_round(self) -> Vec<PlayerResult> {
-        let mut game_over_results: Vec<PlayerResult> = Vec::new();
+    fn complete_round(self) -> RoundResult {
+        let mut round_results: RoundResult = Vec::new();
 
         for player in self.players {
             if hand_is_natural(&player.get_hand()[..]) {
-                game_over_results.push((player, RoundResult::Win));
+                round_results.push((player, PlayerRoundResult::Win));
                 continue;
             }
 
             match get_hand_value(&player.get_hand()[..])
                 .cmp(&get_hand_value(&self.dealer.get_hand()[..]))
             {
-                Ordering::Less => game_over_results.push((player, RoundResult::Lose)),
-                Ordering::Greater => game_over_results.push((player, RoundResult::Win)),
-                Ordering::Equal => game_over_results.push((player, RoundResult::Standoff)),
+                Ordering::Less => round_results.push((player, PlayerRoundResult::Lose)),
+                Ordering::Greater => round_results.push((player, PlayerRoundResult::Win)),
+                Ordering::Equal => round_results.push((player, PlayerRoundResult::Standoff)),
             }
         }
-        game_over_results
+        round_results
     }
 
-    pub fn play_round(self) -> Vec<PlayerResult> {
-        self.handle_naturals()
-        //if let Some(natural_results) = self.handle_naturals() {
-        //    return natural_results;
-        //}
-        //
-        //for player in &mut self.players {
-        //    println!("---Player's turn!---");
-        //    if hand_is_natural(&player.get_hand()[..]) {
-        //        self.dealer.show_hand();
-        //        player.show_hand();
-        //        println!("Blackjack!");
-        //        continue;
-        //    }
-        //    loop {
-        //        self.dealer.show_hand();
-        //        player.show_hand(); //# compared to show hands
-        //
-        //        if hand_is_bust(&player.get_hand()[..]) {
-        //            println!("Bust!");
-        //            break;
-        //        }
-        //
-        //        let turn_over = player.take_turn(&mut self.deck);
-        //        if turn_over {
-        //            break;
-        //        }
-        //
-        //        println!("")
-        //    }
-        //}
-        //
-        //if let Some(automatic_results) = self.check_if_all_players_finished() {
-        //    return automatic_results;
-        //}
-        //
-        //println!("---Dealer's turn!---");
-        //loop {
-        //    self.dealer.show_true_hand();
-        //
-        //    if hand_is_bust(&self.dealer.get_hand()[..]) {
-        //        println!("Dealer goes bust!");
-        //        let mut game_over_results: Vec<PlayerResult> = Vec::new();
-        //        for player in self.players {
-        //            if hand_is_bust(&player.get_hand()){
-        //                game_over_results.push((player, RoundResult::Lose))
-        //            } else {
-        //                game_over_results.push((player, RoundResult::Win))
-        //            }
-        //        }
-        //        return game_over_results;
-        //    }
-        //
-        //    let turn_over = self.dealer.take_turn(&mut self.deck);
-        //
-        //    if turn_over {
-        //        break;
-        //    }
-        //}
-        //
-        //// Finish round
-        //self.complete_round()
+    pub fn play_round(mut self) -> RoundResult {
+        //self.handle_naturals()
+        let natural_results = self.handle_naturals();
+        match natural_results {
+            IntermediateRoundResult::Finished(results) => return results,
+            IntermediateRoundResult::Unfinished(game) => self = game,
+        }
+
+        self.player_turns();
+
+        let player_turn_results = self.check_if_all_players_finished();
+        match player_turn_results {
+            IntermediateRoundResult::Finished(results) => return results,
+            IntermediateRoundResult::Unfinished(game) => self = game,
+        }
+
+        let dealer_turn_results = self.dealer_turn();
+        match dealer_turn_results {
+            IntermediateRoundResult::Finished(results) => return results,
+            IntermediateRoundResult::Unfinished(game) => self = game,
+        }
+
+        self.complete_round()
     }
 }
 
@@ -301,6 +251,9 @@ pub fn hand_is_bust(hand: &[cards::Card]) -> bool {
 
 pub fn play_blackjack(options: GameOptions) {
     let game: ReadyGame<player::Dealer> = ReadyGame::new(&options);
+
+    let _reshuffle_at = get_reshuffle_number(&options.num_decks);
+    let _betting_ratio = &options.betting_ratio;
 
     loop {
         let round = game.deal_hands();
