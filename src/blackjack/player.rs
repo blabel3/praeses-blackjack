@@ -9,12 +9,14 @@ pub enum Action {
 }
 
 impl Action {
-    pub fn parse_from_string(input: &str) -> Self {
+    pub const ACTION_PROMPT: &'static str = "Hit (h) or Stand (s)?";
+
+    pub fn parse_from_string(input: &str) -> Result<Self, &'static str> {
         let input = &input.to_lowercase()[..];
         match input {
-            "hit" | "h" => Self::Hit,
-            "stand" | "s" => Self::Stand,
-            _ => panic!("WHY BLAKE"),
+            "hit" | "h" => Ok(Self::Hit),
+            "stand" | "s" => Ok(Self::Stand),
+            _ => Err("Invalid action input"),
         }
     }
 }
@@ -59,19 +61,22 @@ pub struct HumanPlayer {
 
 impl BlackjackPlayer for HumanPlayer {
     fn get_action(&self) -> Action {
-        let mut action = String::new();
+        println!("{}", Action::ACTION_PROMPT);
 
-        println!("hit or stand?   ");
+        loop {
+            let mut input = String::new();
 
-        io::stdin()
-            .read_line(&mut action)
+            io::stdin()
+            .read_line(&mut input)
             .expect("Failed to read line");
 
-        action = action.trim().to_string();
+            input = input.trim().to_string();
 
-        let action: Action = Action::parse_from_string(&action);
-        //println!("{:?}", action);
-        action
+            match Action::parse_from_string(&input) {
+                Ok(action) => return action,
+                Err(e) => println!("{}, try again.", e)
+            }
+        }
     }
 
     fn get_hand(&self) -> &Vec<cards::Card> {
