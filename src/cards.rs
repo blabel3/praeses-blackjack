@@ -1,4 +1,4 @@
-//! This module houses logic relating to cards and card value
+//! Logic and helpful structs relating to cards and decks of cards.
 
 use rand::seq::SliceRandom;
 use rand::thread_rng;
@@ -6,6 +6,7 @@ use std::fmt;
 use strum::{EnumCount, IntoEnumIterator};
 use strum_macros::{EnumCount as EnumCountMacro, EnumIter};
 
+/// Enum describing the rank of a card.
 #[derive(EnumIter, EnumCountMacro, Copy, Clone, Debug)]
 pub enum Rank {
     Ace,
@@ -24,6 +25,7 @@ pub enum Rank {
 }
 
 impl Rank {
+    /// Given a card's rank, return the short string representation of it.
     const fn simple_abbreviation(&self) -> &str {
         match self {
             Self::Ace => "A",
@@ -43,6 +45,7 @@ impl Rank {
     }
 }
 
+/// Enum describing the suit of a card.
 #[derive(EnumIter, EnumCountMacro, Copy, Clone, Debug)]
 pub enum Suit {
     Club,
@@ -52,6 +55,7 @@ pub enum Suit {
 }
 
 impl Suit {
+    /// Given a card's suit, return the unicode symbol of that suit.
     fn unicode_representation(&self) -> &str {
         match self {
             Self::Club => "♣",
@@ -62,6 +66,7 @@ impl Suit {
     }
 }
 
+/// Object describing a playing card.
 #[derive(Debug, Copy, Clone)]
 pub struct Card {
     pub rank: Rank,
@@ -79,9 +84,13 @@ impl fmt::Display for Card {
     }
 }
 
+/// From the ranks and suits we described, gets the number of cards in a standard
+/// deck (where there is one of each unique card present)
 pub const STANDARD_DECK_COUNT: usize = Suit::COUNT * Rank::COUNT;
 
-pub fn standard_deck() -> [Card; Suit::COUNT * Rank::COUNT] {
+/// Creates a standard deck: an array of length `STANDARD_DECK_COUNT` containing one
+/// of each unique card.
+pub fn standard_deck() -> [Card; STANDARD_DECK_COUNT] {
     let mut card_collector: Vec<Card> = Vec::new();
 
     for suit in Suit::iter() {
@@ -94,13 +103,35 @@ pub fn standard_deck() -> [Card; Suit::COUNT * Rank::COUNT] {
     card_collector.try_into().unwrap()
 }
 
-pub fn get_shuffled_deck(num_decks: u32) -> Vec<Card> {
+/// Creates a deck of multiple standard decks.
+///
+/// # Arguments
+///
+/// * `num_decks` - The number of standard decks to use when creating the multideck.
+///
+/// # Examples
+///
+/// ```
+/// use praeses_blackjack::cards::{create_multideck, STANDARD_DECK_COUNT};
+///
+/// let multideck = create_multideck(2);
+/// assert_eq!(multideck.len(), STANDARD_DECK_COUNT * 2);
+/// ```
+pub fn create_multideck(num_decks: u32) -> Vec<Card> {
     let mut deck: Vec<Card> = Vec::new();
     let standard_deck = standard_deck();
 
     for _ in 0..num_decks {
         deck.extend_from_slice(&standard_deck);
     }
-    deck.shuffle(&mut thread_rng());
     deck
+}
+
+/// Given a deck of cards, shuffles the deck efficiently.
+///
+/// # Arguments
+///
+/// * `deck: The deck to shuffle, as a list of cards.
+pub fn shuffle_deck(deck: &mut Vec<Card>) {
+    deck.shuffle(&mut thread_rng());
 }

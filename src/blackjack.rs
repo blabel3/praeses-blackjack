@@ -48,7 +48,8 @@ where
             players.push(Box::new(player::HumanPlayer::new()));
         }
 
-        let deck = cards::get_shuffled_deck(options.num_decks);
+        let mut deck = cards::create_multideck(options.num_decks);
+        cards::shuffle_deck(&mut deck);
 
         ReadyGame {
             players,
@@ -81,13 +82,6 @@ impl<D> InProgressGame<D>
 where
     D: player::BlackjackDealer,
 {
-    pub fn display_hands(&self) {
-        self.dealer.show_hand();
-        for player in &self.players {
-            player.show_hand();
-        }
-    }
-
     pub fn handle_blackjacks(players: &[Box<dyn player::BlackjackPlayer>], dealer: &D) -> bool {
         let (mut players_w_bj, mut players_wo_bj): (Vec<_>, Vec<_>) = players
             .into_iter()

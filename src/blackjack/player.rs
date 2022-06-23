@@ -17,8 +17,11 @@ pub enum Action {
 }
 
 impl Action {
+    /// Provides a default prompt for actions in the commandline.
     pub const ACTION_PROMPT: &'static str = "Hit (h) or Stand (s)?";
 
+    /// From an input string, return an action if there is an appropriate match found.
+    /// If not, return an error.
     pub fn parse_from_string(input: &str) -> Result<Self, &'static str> {
         let input = &input.to_lowercase()[..];
         match input {
