@@ -1,8 +1,8 @@
 mod player;
 
-use std::fmt;
 use std::cmp;
 use std::cmp::Ordering;
+use std::fmt;
 
 use crate::cards;
 
