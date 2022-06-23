@@ -73,10 +73,14 @@ pub struct Card {
     pub suit: Suit,
 }
 
-/// `Vec<Card>`: A List of cards is a deck. Can be any size as cards get dealt out!
+/// Representing the cards used in dealing and to give to players. Nobody owns it other than the game itself!
 pub type Deck = Vec<Card>;
 
+/// Represents the cards that a player owns.
+pub type Hand = Vec<Card>;
+
 impl fmt::Display for Card {
+    /// Shows a card's rank and suit in a natural way.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,

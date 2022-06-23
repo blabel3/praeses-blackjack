@@ -1,7 +1,7 @@
-//! Logic for Blackjack players: how they decide what to do,
-//! what happens when they make their action, and all of that
-//! are here so that we can make players that behave differently
-//! that all act within the allowed moves in Blackjack.
+//! Logic for Blackjack players: how they decide what to do and
+//! what happens when they make their action are here. Using this, 
+//! you can create players that behave differently but all act 
+//! within the allowed moves in Blackjack.
 
 use crate::blackjack;
 use crate::cards;
@@ -10,9 +10,9 @@ use std::io;
 /// Supported player actions.
 #[derive(Debug)]
 pub enum Action {
-    /// Hit: adds a card from the deck to your hand
+    /// Adds a card from the deck to your hand
     Hit,
-    /// Stand: keep the cards in your hand and pass to the next player
+    /// Keep the cards in your hand and pass to the next player
     Stand,
 }
 
@@ -32,21 +32,30 @@ impl Action {
     }
 }
 
+/// A trait representing behavior every player in a game of blackjack should be able to handle. 
 pub trait BlackjackPlayer {
-    fn get_hand(&self) -> &Vec<cards::Card>;
+    /// Get a reference to the player's hand, all the cards they have.
+    fn get_hand(&self) -> &cards::Hand;
 
+    /// Syntactic sugar for getting a slice from their hand.
+    /// Equivalent to `&self.get_hand()[..]`
     fn get_hand_slice(&self) -> &[cards::Card] {
         self.get_hand().as_slice()
     }
 
+    /// Display the user's current hand in a natural way.
     fn show_hand(&self) -> ();
 
     // Can probably turn new and this into a macro maybe?
+    /// Add a card given in the argument to a player's hand.
     fn recieve_card(&mut self, card: cards::Card) -> ();
 
+    /// Get what action a player should take.
     fn get_action(&self) -> Action;
 
-    fn handle_player_action(&mut self, action: Action, deck: &mut Vec<cards::Card>) -> bool {
+    /// Carry out a player's actions in the game.
+    /// Returns true or false if they can take another turn or not.
+    fn handle_player_action(&mut self, action: Action, deck: &mut cards::Deck) -> bool {
         match action {
             Action::Hit => {
                 let deal = deck.pop().unwrap();
@@ -58,7 +67,8 @@ pub trait BlackjackPlayer {
         }
     }
 
-    fn take_turn(&mut self, deck: &mut Vec<cards::Card>) -> bool {
+    /// A player's turn logic is in here!
+    fn take_turn(&mut self, deck: &mut cards::Deck) -> bool {
         let action = self.get_action();
         self.handle_player_action(action, deck)
     }
@@ -70,8 +80,9 @@ pub trait BlackjackPlayer {
     //}
 }
 
+/// A player controlled by a human and their input into the commandline. Their output is sent to stdout. 
 pub struct HumanPlayer {
-    pub hand: Vec<cards::Card>,
+    hand: cards::Hand,
 }
 
 impl BlackjackPlayer for HumanPlayer {
@@ -115,19 +126,25 @@ impl BlackjackPlayer for HumanPlayer {
 }
 
 impl HumanPlayer {
+    /// Creates a new human player.
     pub fn new() -> HumanPlayer {
         HumanPlayer { hand: Vec::new() }
     }
 }
 
+/// A trait representing the dealer in a game of blackjack. 
+/// They act similarly to players, but with a bit more behaviors needed.
 pub trait BlackjackDealer: BlackjackPlayer {
+    /// Shows the tur ehand of the dealer (because usually their complete hand will be hidden from players).
     fn show_true_hand(&self);
 
+    /// Creates a new BlackjackDealer
     fn new() -> Self;
 }
 
+/// A standard dealer whose output is sent to stdout. 
 pub struct Dealer {
-    pub hand: Vec<cards::Card>,
+    hand: cards::Hand,
 }
 
 // Dealer probably doesn't need to implement this actually...

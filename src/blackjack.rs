@@ -1,4 +1,4 @@
-//! Blackjack game functionality
+//! Blackjack game functionality.
 
 pub mod player;
 
@@ -27,6 +27,7 @@ enum PlayerRoundResult {
 }
 
 impl fmt::Display for PlayerRoundResult {
+    /// Shows a player's win/lose condition in a more human-readable way.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             PlayerRoundResult::Win => write!(f, "You win! Congratulations! :)"),
@@ -141,12 +142,14 @@ where
     fn player_turns(&mut self) {
         for player in &mut self.players {
             println!("---Player's turn!---");
+            // If they had blackjack, they do not take a turn.
             if hand_is_natural(player.get_hand_slice()) {
                 self.dealer.show_hand();
                 player.show_hand();
                 println!("Blackjack!");
                 continue;
             }
+
             loop {
                 self.dealer.show_hand();
                 player.show_hand(); //# compared to show hands
@@ -193,7 +196,7 @@ where
                 println!("Dealer goes bust!");
                 let mut round_results: RoundResult = Vec::new();
                 for player in self.players {
-                    if hand_is_bust(&player.get_hand()) {
+                    if hand_is_bust(player.get_hand_slice()) {
                         round_results.push((player, PlayerRoundResult::Lose))
                     } else {
                         round_results.push((player, PlayerRoundResult::Win))
@@ -216,6 +219,8 @@ where
         let mut round_results: RoundResult = Vec::new();
 
         for player in self.players {
+            // If a player had blackjack, they win even if the dealer got to 21 themselves later.
+            // If dealer had blackjack, then the game would've ended before this call.
             if hand_is_natural(player.get_hand_slice()) {
                 round_results.push((player, PlayerRoundResult::Win));
                 continue;
@@ -334,8 +339,12 @@ fn get_reshuffle_number(num_decks: &u32) -> u32 {
 }
 
 /// From a GameOptions describing the settings of the game, play a full game of blackjack.
-pub fn play_blackjack(options: GameOptions) {
-    let game: ReadyGame<player::Dealer> = ReadyGame::new(&options);
+/// Takes a dealer type, which is the dealer that the game will use.
+pub fn play_blackjack<D>(options: GameOptions)
+where
+    D: player::BlackjackDealer,
+{
+    let game: ReadyGame<D> = ReadyGame::new(&options);
 
     let _reshuffle_at = get_reshuffle_number(&options.num_decks);
     let _betting_ratio = &options.payout_ratio;

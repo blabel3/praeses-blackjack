@@ -7,12 +7,5 @@ fn main() {
         payout_ratio: 1.5,
     };
 
-    blackjack::play_blackjack(options);
-
-    // let standard_deck = cards::Card::standard_deck();
-    // println!("{:#?}", standard_deck);
-
-    // println!("{}", standard_deck[0]);
-
-    //let mut rng = thread_rng();
+    blackjack::play_blackjack::<blackjack::player::Dealer>(options);
 }
