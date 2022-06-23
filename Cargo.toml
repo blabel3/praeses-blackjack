@@ -4,8 +4,19 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Blake Abel <blake@blabel.dev>"]
 description = "Library for playing blackjack"
+license = "MIT"
+readme = "README.md"
+homepage = "https://github.com/blabel3/praeses-blackjack-rust"
+repository = "https://github.com/blabel3/praeses-blackjack-rust"
+keywords = ["cli", "blackjack", "demo"]
+categories = ["command-line-utilities"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+bench = false
+path = "src/main.rs"
+name = "pbj"
 
 [dependencies]
 rand = "0.8.5"
