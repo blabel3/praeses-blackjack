@@ -23,7 +23,7 @@ impl Action {
     /// From an input string, return an action if there is an appropriate match found.
     /// If not, return an error.
     pub fn parse_from_string(input: &str) -> Result<Self, &'static str> {
-        let input = &input.to_lowercase()[..];
+        let input = &input.trim().to_lowercase()[..];
         match input {
             "hit" | "h" => Ok(Self::Hit),
             "stand" | "s" => Ok(Self::Stand),
@@ -58,7 +58,7 @@ pub trait BlackjackPlayer {
     fn recieve_card(&mut self, card: cards::Card) -> ();
 
     /// Get what action a player should take.
-    fn get_action(&self) -> Action;
+    fn get_action(&self, dealer_upcard: &cards::Card) -> Action;
 
     /// Carry out a player's actions in the game.
     /// Returns true or false if they can take another turn or not.
@@ -75,8 +75,8 @@ pub trait BlackjackPlayer {
     }
 
     /// A player's turn logic is in here!
-    fn take_turn(&mut self, deck: &mut cards::Deck) -> bool {
-        let action = self.get_action();
+    fn take_turn(&mut self, deck: &mut cards::Deck, dealer_upcard: &cards::Card) -> bool {
+        let action = self.get_action(dealer_upcard);
         self.handle_player_action(action, deck)
     }
 
@@ -119,7 +119,7 @@ impl BlackjackPlayer for HumanPlayer {
         &self.name
     }
 
-    fn get_action(&self) -> Action {
+    fn get_action(&self, _dealer_upcard: &cards::Card) -> Action {
         println!("{}", Action::ACTION_PROMPT);
 
         loop {
@@ -128,8 +128,6 @@ impl BlackjackPlayer for HumanPlayer {
             io::stdin()
                 .read_line(&mut input)
                 .expect("Failed to read line");
-
-            input = input.trim().to_string();
 
             match Action::parse_from_string(&input) {
                 Ok(action) => return action,
@@ -143,18 +141,29 @@ impl BlackjackPlayer for HumanPlayer {
     }
 
     fn show_hand(&self) {
-        print!("{}'s Cards: {}", &self.name, &self.hand[0]);
-        for card in &self.hand[1..] {
+        print!("{}'s Cards: {}", self.get_name(), &self.hand[0]);
+        for card in &self.get_hand_slice()[1..] {
             print!(", {}", card);
         }
         println!(
             "     (value: {})",
-            blackjack::get_hand_value(&self.hand[..])
+            blackjack::get_hand_value(&self.get_hand_slice())
         );
     }
 
     fn recieve_card(&mut self, card: cards::Card) {
         self.hand.push(card);
+    }
+}
+
+impl HumanPlayer {
+    /// Used in testing to not need person's input.
+    #[allow(dead_code)]
+    fn new_default() -> HumanPlayer {
+        HumanPlayer {
+            name: "Player".to_string(),
+            hand: Vec::new(),
+        }
     }
 }
 
@@ -180,7 +189,7 @@ impl BlackjackPlayer for Dealer {
         "Dealer"
     }
 
-    fn get_action(&self) -> Action {
+    fn get_action(&self, _dealer_upcard: &cards::Card) -> Action {
         if blackjack::get_hand_value(&self.hand[..]) >= 17 {
             Action::Stand
         } else {
@@ -218,6 +227,76 @@ impl BlackjackDealer for Dealer {
     }
 }
 
+/// A simple bot acting as a player that will always do the most optimal move
+/// Given their hand and without counting cards.
+pub struct AutoPlayer {
+    hand: cards::Hand,
+}
+
+impl BlackjackPlayer for AutoPlayer {
+    fn new() -> AutoPlayer {
+        AutoPlayer { hand: Vec::new() }
+    }
+
+    fn get_name(&self) -> &str {
+        "Bot"
+    }
+
+    fn get_action(&self, dealer_upcard: &cards::Card) -> Action {
+        // If the player has a soft hand (hand with ace), hit until at least 18.
+        if self
+            .get_hand_slice()
+            .iter()
+            .any(|&x| x.rank == cards::Rank::Ace)
+        {
+            if blackjack::get_hand_value(self.get_hand_slice()) >= 18 {
+                return Action::Stand;
+            } else {
+                return Action::Hit;
+            }
+        }
+
+        let stop_at: u32;
+        match dealer_upcard.rank {
+            cards::Rank::Ace
+            | cards::Rank::Seven
+            | cards::Rank::Eight
+            | cards::Rank::Nine
+            | cards::Rank::Ten
+            | cards::Rank::Jack
+            | cards::Rank::Queen
+            | cards::Rank::King => stop_at = 17,
+            cards::Rank::Four | cards::Rank::Five | cards::Rank::Six => stop_at = 12,
+            cards::Rank::Two | cards::Rank::Three => stop_at = 13,
+        }
+
+        if blackjack::get_hand_value(self.get_hand_slice()) >= stop_at {
+            Action::Stand
+        } else {
+            Action::Hit
+        }
+    }
+
+    fn get_hand(&self) -> &Vec<cards::Card> {
+        &self.hand
+    }
+
+    fn show_hand(&self) {
+        print!("{}'s Cards: {}", self.get_name(), &self.hand[0]);
+        for card in &self.hand[1..] {
+            print!(", {}", card);
+        }
+        println!(
+            "     (value: {})",
+            blackjack::get_hand_value(&self.hand[..])
+        );
+    }
+
+    fn recieve_card(&mut self, card: cards::Card) {
+        self.hand.push(card);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -232,9 +311,91 @@ mod tests {
         assert_eq!(1, player.get_hand().len());
     }
 
+    fn create_card_from_value(value: u32) -> cards::Card {
+        match value {
+            1 => cards::Card {
+                rank: cards::Rank::Ace,
+                suit: cards::Suit::Spade,
+            },
+            2 => cards::Card {
+                rank: cards::Rank::Two,
+                suit: cards::Suit::Spade,
+            },
+            3 => cards::Card {
+                rank: cards::Rank::Three,
+                suit: cards::Suit::Spade,
+            },
+            4 => cards::Card {
+                rank: cards::Rank::Four,
+                suit: cards::Suit::Spade,
+            },
+            5 => cards::Card {
+                rank: cards::Rank::Five,
+                suit: cards::Suit::Spade,
+            },
+            6 => cards::Card {
+                rank: cards::Rank::Six,
+                suit: cards::Suit::Spade,
+            },
+            7 => cards::Card {
+                rank: cards::Rank::Seven,
+                suit: cards::Suit::Spade,
+            },
+            8 => cards::Card {
+                rank: cards::Rank::Eight,
+                suit: cards::Suit::Spade,
+            },
+            9 => cards::Card {
+                rank: cards::Rank::Nine,
+                suit: cards::Suit::Spade,
+            },
+            10 => cards::Card {
+                rank: cards::Rank::Ten,
+                suit: cards::Suit::Spade,
+            },
+            _ => panic!("Tried to make a card of an invalid value in tests."),
+        }
+    }
+
+    fn check_action_from_cards<T: BlackjackPlayer>(
+        card_values: (u32, u32),
+        upcard: Option<u32>,
+        action: Action,
+    ) {
+        let upcard = create_card_from_value(upcard.unwrap_or(1));
+        let mut player = T::new();
+        player.recieve_card(create_card_from_value(card_values.0));
+        player.recieve_card(create_card_from_value(card_values.1));
+        assert_eq!(player.get_action(&upcard), action);
+    }
+
     #[test]
     fn player_adds_card_to_hand() {
-        add_card_to_hand(HumanPlayer::new());
+        add_card_to_hand(HumanPlayer::new_default());
+    }
+
+    #[test]
+    fn parses_action_from_string() {
+        assert_eq!(Action::parse_from_string("hit").unwrap(), Action::Hit);
+        assert_eq!(Action::parse_from_string("h").unwrap(), Action::Hit);
+        assert_eq!(Action::parse_from_string(" hit").unwrap(), Action::Hit);
+        assert_eq!(Action::parse_from_string("hit ").unwrap(), Action::Hit);
+        assert_eq!(Action::parse_from_string("Hit").unwrap(), Action::Hit);
+        assert_eq!(Action::parse_from_string("HIT").unwrap(), Action::Hit);
+
+        assert_eq!(Action::parse_from_string("stand").unwrap(), Action::Stand);
+        assert_eq!(Action::parse_from_string("s").unwrap(), Action::Stand);
+        assert_eq!(Action::parse_from_string(" stand").unwrap(), Action::Stand);
+        assert_eq!(Action::parse_from_string("stand ").unwrap(), Action::Stand);
+        assert_eq!(Action::parse_from_string("Stand").unwrap(), Action::Stand);
+        assert_eq!(Action::parse_from_string("STAND").unwrap(), Action::Stand);
+
+        assert!(Action::parse_from_string("shmit").is_err());
+        assert!(Action::parse_from_string("stund").is_err());
+        assert!(Action::parse_from_string("hoot").is_err());
+        assert!(Action::parse_from_string("ham").is_err());
+        assert!(Action::parse_from_string("praeses").is_err());
+        assert!(Action::parse_from_string("blake").is_err());
     }
 
     #[test]
@@ -244,60 +405,37 @@ mod tests {
 
     #[test]
     fn dealer_acts_properly() {
-        let mut dealer = Dealer::new();
+        check_action_from_cards::<Dealer>((7, 10), None, Action::Stand);
+        check_action_from_cards::<Dealer>((10, 10), None, Action::Stand);
+        check_action_from_cards::<Dealer>((7, 1), None, Action::Stand);
+        check_action_from_cards::<Dealer>((4, 8), None, Action::Hit);
+        check_action_from_cards::<Dealer>((9, 7), None, Action::Hit);
+    }
 
-        dealer.recieve_card(cards::Card {
-            rank: cards::Rank::Seven,
-            suit: cards::Suit::Spade,
-        });
-        dealer.recieve_card(cards::Card {
-            rank: cards::Rank::Ten,
-            suit: cards::Suit::Spade,
-        });
-        assert_eq!(dealer.get_action(), Action::Stand);
-        let mut dealer = Dealer::new();
+    #[test]
+    fn bot_acts_properly() {
+        // If you have an ace, stand at value of 18 or more.
+        check_action_from_cards::<AutoPlayer>((1, 7), None, Action::Stand);
 
-        dealer.recieve_card(cards::Card {
-            rank: cards::Rank::King,
-            suit: cards::Suit::Spade,
-        });
-        dealer.recieve_card(cards::Card {
-            rank: cards::Rank::Queen,
-            suit: cards::Suit::Spade,
-        });
-        assert_eq!(dealer.get_action(), Action::Stand);
-        let mut dealer = Dealer::new();
+        // If you have an ace, hit at a value of 17 or less.
+        check_action_from_cards::<AutoPlayer>((1, 6), None, Action::Hit);
 
-        dealer.recieve_card(cards::Card {
-            rank: cards::Rank::Seven,
-            suit: cards::Suit::Spade,
-        });
-        dealer.recieve_card(cards::Card {
-            rank: cards::Rank::Ace,
-            suit: cards::Suit::Spade,
-        });
-        assert_eq!(dealer.get_action(), Action::Stand);
-        let mut dealer = Dealer::new();
+        // If the dealer's card is good, stand at 17 or more.
+        check_action_from_cards::<AutoPlayer>((10, 7), Some(10), Action::Stand);
 
-        dealer.recieve_card(cards::Card {
-            rank: cards::Rank::Four,
-            suit: cards::Suit::Spade,
-        });
-        dealer.recieve_card(cards::Card {
-            rank: cards::Rank::Eight,
-            suit: cards::Suit::Spade,
-        });
-        assert_eq!(dealer.get_action(), Action::Hit);
-        let mut dealer = Dealer::new();
+        // If the dealer's card is good, hit at 16 or less.
+        check_action_from_cards::<AutoPlayer>((10, 6), Some(10), Action::Hit);
 
-        dealer.recieve_card(cards::Card {
-            rank: cards::Rank::Nine,
-            suit: cards::Suit::Spade,
-        });
-        dealer.recieve_card(cards::Card {
-            rank: cards::Rank::Seven,
-            suit: cards::Suit::Spade,
-        });
-        assert_eq!(dealer.get_action(), Action::Hit);
+        // If the dealer's card is bad, stand at 12 or more.
+        check_action_from_cards::<AutoPlayer>((10, 2), Some(4), Action::Stand);
+
+        // If the dealer's card is bad, hit at 11 or less.
+        check_action_from_cards::<AutoPlayer>((8, 3), Some(4), Action::Hit);
+
+        // If the dealer's card is fair, stand at 13 or more.
+        check_action_from_cards::<AutoPlayer>((10, 3), Some(2), Action::Stand);
+
+        // If the dealer's card is fair, hit at 12 or less.
+        check_action_from_cards::<AutoPlayer>((10, 2), Some(2), Action::Hit);
     }
 }
