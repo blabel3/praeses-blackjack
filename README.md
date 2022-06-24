@@ -45,7 +45,7 @@ Once the executable is installed, you should be able to run it by entering `pbj`
 
 # Contributing
 
-To contribute to the project, first set up your environment by following the directions from [Installing with Rust](#Installing-with-Rust-(recommended))
+To contribute to the project, first set up your environment by following the directions from [Installing with Rust](#Installing-with-Rust-(recommended)).
 
 To make edits to the code, first, make sure you're in a new branch! The repo is set up to not allow commits directly on main to make sure the main branch is stable.
 
