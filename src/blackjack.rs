@@ -340,6 +340,20 @@ fn get_reshuffle_number(num_decks: &u32) -> u32 {
 
 /// From a GameOptions describing the settings of the game, play a full game of blackjack.
 /// Takes a dealer type, which is the dealer that the game will use.
+/// 
+/// # Example
+/// 
+/// ```
+/// use praeses_blackjack::blackjack;
+/// 
+/// let options = blackjack::GameOptions {
+/// num_players: 1,
+/// num_decks: 6,
+/// payout_ratio: 1.5,
+/// };
+/// 
+/// // blackjack::play_blackjack::<blackjack::player::Dealer>(options);
+/// ```
 pub fn play_blackjack<D>(options: GameOptions)
 where
     D: player::BlackjackDealer,
