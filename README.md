@@ -27,7 +27,7 @@ You can then put that in your bin/ folder or wherever executables are available 
 
 ### Pre-Requisite
 
-Have a commandline environment you're comfortable with, and install [Rust](https://www.rust-lang.org/tools/install)
+Have a commandline environment you're comfortable with, and install [Rust](https://www.rust-lang.org/tools/install).
 
 ### Installing via Cargo
 
