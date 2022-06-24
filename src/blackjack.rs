@@ -13,6 +13,8 @@ use crate::cards;
 pub struct GameOptions {
     /// How many players are at the table
     pub num_players: u32,
+    /// Whether or not to play alongside a bot player.
+    pub bot_player: bool,
     /// How many decks are used to create the deck (most popular is six for a 312 card game).
     pub num_decks: u32,
     /// Payout for winning in blackjack, usually 3:2 or 6:5.
@@ -68,6 +70,10 @@ where
 {
     fn new(options: &GameOptions) -> ReadyGame<D> {
         let mut players: Vec<Box<dyn player::BlackjackPlayer>> = Vec::new();
+
+        if options.bot_player {
+            players.push(Box::new(player::AutoPlayer::new()));
+        }
 
         for _ in 0..options.num_players {
             // Will change with multiplayer and such -- We will have to call new on different players!
@@ -158,7 +164,7 @@ where
                     println!("Bust!");
                     break;
                 }
-                let turn_over = player.take_turn(&mut self.deck);
+                let turn_over = player.take_turn(&mut self.deck, &self.dealer.get_hand_slice()[1]);
                 if turn_over {
                     break;
                 }
@@ -208,7 +214,8 @@ where
                     leftover_deck: self.deck,
                 };
             }
-            let turn_over = self.dealer.take_turn(&mut self.deck);
+            let upcard = &self.dealer.get_hand_slice()[1].clone();
+            let turn_over = self.dealer.take_turn(&mut self.deck, upcard);
             if turn_over {
                 break;
             }
@@ -349,6 +356,7 @@ fn get_reshuffle_number(num_decks: &u32) -> u32 {
 ///
 /// let options = blackjack::GameOptions {
 /// num_players: 1,
+/// bot_player: true,
 /// num_decks: 6,
 /// payout_ratio: 1.5,
 /// };

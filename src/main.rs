@@ -10,9 +10,9 @@ struct Args {
     #[clap(short = 'h', long, value_parser, default_value_t = 1)]
     human_players: u32,
 
-    /// Number of bot players in the game
-    #[clap(short = 'b', long, value_parser, default_value_t = 0)]
-    bot_players: u32,
+    /// If included, will add a bot player to the game.
+    #[clap(short = 'b', long, value_parser, default_value_t = false)]
+    bot_player: bool,
 
     /// Number of decks to use in the game
     #[clap(short = 'd', long, value_parser, default_value_t = 6)]
@@ -28,6 +28,7 @@ fn main() {
 
     let options = blackjack::GameOptions {
         num_players: args.human_players,
+        bot_player: args.bot_player,
         num_decks: args.num_decks,
         payout_ratio: args.payout_ratio,
     };
