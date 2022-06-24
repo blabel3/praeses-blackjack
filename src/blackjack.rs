@@ -1,12 +1,13 @@
 //! Blackjack game functionality.
 
-pub mod player;
+pub mod actors;
 
 use std::cmp;
 use std::cmp::Ordering;
 use std::{fmt, io};
 
-use crate::blackjack::player::BlackjackPlayer;
+use crate::blackjack::actors::dealers::Dealer;
+use crate::blackjack::actors::players::{self, Player};
 use crate::cards;
 
 /// Options for running a game of blackjack.
@@ -27,9 +28,13 @@ pub struct GameOptions {
 /// Possible results for each player each round.
 #[derive(Debug, Copy, Clone)]
 pub enum PlayerRoundResult {
+    /// Natural or Blackjack is when the player has 21 in the first two cards. (But if the dealer matches then it's a standoff)
     Natural,
+    /// If they have more than the dealer at the end of the round or the dealer goes bust while they stand.
     Win,
+    /// If they go bust or if the dealer has more than them at the end of the round.
     Lose,
+    /// If their value and the dealer's are exactly equal at the end of the round.
     Standoff,
 }
 
@@ -45,11 +50,11 @@ impl fmt::Display for PlayerRoundResult {
     }
 }
 
-type PlayerResult = (Box<dyn player::BlackjackPlayer>, PlayerRoundResult);
+type PlayerResult = (Box<dyn Player>, PlayerRoundResult);
 
 type RoundResult = Vec<PlayerResult>;
 
-enum IntermediateRoundResult<D: player::BlackjackDealer> {
+enum IntermediateRoundResult<D: Dealer> {
     Finished {
         results: RoundResult,
         leftover_deck: cards::Deck,
@@ -57,32 +62,32 @@ enum IntermediateRoundResult<D: player::BlackjackDealer> {
     Unfinished(InProgressGame<D>),
 }
 
-struct ReadyGame<D: player::BlackjackDealer> {
-    players: Vec<Box<dyn player::BlackjackPlayer>>,
+struct ReadyGame<D: Dealer> {
+    players: Vec<Box<dyn Player>>,
     dealer: D,
     deck: cards::Deck,
 }
 
-struct InProgressGame<D: player::BlackjackDealer> {
-    players: Vec<Box<dyn player::BlackjackPlayer>>,
+struct InProgressGame<D: Dealer> {
+    players: Vec<Box<dyn Player>>,
     dealer: D,
     deck: cards::Deck,
 }
 
 impl<D> ReadyGame<D>
 where
-    D: player::BlackjackDealer,
+    D: Dealer,
 {
     fn new(options: &GameOptions) -> ReadyGame<D> {
-        let mut players: Vec<Box<dyn player::BlackjackPlayer>> = Vec::new();
+        let mut players: Vec<Box<dyn players::Player>> = Vec::new();
 
         if options.bot_player {
-            players.push(Box::new(player::AutoPlayer::new(options.betting_buyin)));
+            players.push(Box::new(players::AutoPlayer::new(options.betting_buyin)));
         }
 
         for _ in 0..options.num_players {
             // Will change with multiplayer and such -- We will have to call new on different players!
-            players.push(Box::new(player::HumanPlayer::new(options.betting_buyin)));
+            players.push(Box::new(players::HumanPlayer::new(options.betting_buyin)));
         }
 
         let mut deck = cards::create_multideck(options.num_decks);
@@ -90,7 +95,7 @@ where
 
         ReadyGame {
             players,
-            dealer: D::new(options.betting_buyin),
+            dealer: D::new(),
             deck,
         }
     }
@@ -115,11 +120,11 @@ where
     }
 
     fn from_previous_round(
-        players: Vec<Box<dyn BlackjackPlayer>>,
+        players: Vec<Box<dyn Player>>,
         leftover_deck: cards::Deck,
         options: &GameOptions,
     ) -> ReadyGame<D> {
-        let mut ready_players: Vec<Box<dyn BlackjackPlayer>> = Vec::new();
+        let mut ready_players: Vec<Box<dyn Player>> = Vec::new();
         for mut player in players {
             player.buyin_if_broke(options.betting_buyin);
             ready_players.push(player);
@@ -136,7 +141,7 @@ where
 
         ReadyGame {
             players: ready_players,
-            dealer: D::new(options.betting_buyin),
+            dealer: D::new(),
             deck,
         }
     }
@@ -144,7 +149,7 @@ where
 
 impl<D> InProgressGame<D>
 where
-    D: player::BlackjackDealer,
+    D: Dealer,
 {
     fn handle_naturals(self) -> IntermediateRoundResult<D> {
         let mut round_results: RoundResult = Vec::new();
@@ -235,11 +240,11 @@ where
     }
 
     fn dealer_turn(mut self) -> IntermediateRoundResult<D> {
-        println!("---{}'s turn!---", self.dealer.get_name());
+        println!("---Dealer's turn!---");
         loop {
             self.dealer.show_true_hand();
             if hand_is_bust(self.dealer.get_hand_slice()) {
-                println!("{} goes bust!", self.dealer.get_name());
+                println!("Dealer goes bust!");
                 let mut round_results: RoundResult = Vec::new();
                 for player in self.players {
                     if hand_is_bust(player.get_hand_slice()) {
@@ -253,8 +258,7 @@ where
                     leftover_deck: self.deck,
                 };
             }
-            let upcard = &self.dealer.get_hand_slice()[1].clone();
-            let turn_over = self.dealer.take_turn(&mut self.deck, upcard);
+            let turn_over = self.dealer.take_turn(&mut self.deck);
             if turn_over {
                 break;
             }
@@ -374,9 +378,9 @@ pub fn hand_is_bust(hand: &[cards::Card]) -> bool {
 }
 
 /// Settles the round--goes over the results (and bets once those are added)
-fn settle_round(round_results: RoundResult, &payout_ratio: &f64) -> Vec<Box<dyn BlackjackPlayer>> {
+fn settle_round(round_results: RoundResult, &payout_ratio: &f64) -> Vec<Box<dyn Player>> {
     println!("");
-    let mut new_players: Vec<Box<dyn BlackjackPlayer>> = Vec::new();
+    let mut new_players: Vec<Box<dyn Player>> = Vec::new();
     for (mut player, result) in round_results {
         //player.show_hand();
         player.handle_round_result(result, payout_ratio);
@@ -440,7 +444,7 @@ fn should_play_another_round() -> bool {
 /// ```
 pub fn play_blackjack<D>(options: GameOptions)
 where
-    D: player::BlackjackDealer,
+    D: Dealer,
 {
     let mut game: ReadyGame<D> = ReadyGame::new(&options);
 

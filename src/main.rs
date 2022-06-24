@@ -1,4 +1,5 @@
 use praeses_blackjack::blackjack;
+use praeses_blackjack::blackjack::actors::dealers;
 
 use clap::Parser;
 
@@ -38,5 +39,5 @@ fn main() {
         payout_ratio: args.payout_ratio,
     };
 
-    blackjack::play_blackjack::<blackjack::player::Dealer>(options);
+    blackjack::play_blackjack::<dealers::StandardDealer>(options);
 }
