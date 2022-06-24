@@ -1,12 +1,13 @@
 //! Blackjack game functionality.
 
-pub mod player;
+pub mod actors;
 
 use std::cmp;
 use std::cmp::Ordering;
-use std::fmt;
+use std::{fmt, io};
 
-use crate::blackjack::player::BlackjackPlayer;
+use crate::blackjack::actors::dealers::Dealer;
+use crate::blackjack::actors::players::{self, Player};
 use crate::cards;
 
 /// Options for running a game of blackjack.
@@ -17,15 +18,23 @@ pub struct GameOptions {
     pub bot_player: bool,
     /// How many decks are used to create the deck (most popular is six for a 312 card game).
     pub num_decks: u32,
+    /// How much money to give players to start with (and if/when they run out).
+    pub betting_buyin: u32,
     /// Payout for winning in blackjack, usually 3:2 or 6:5.
     /// Higher is better for the players, lower is better for the house.
     pub payout_ratio: f64,
 }
 
+/// Possible results for each player each round.
 #[derive(Debug, Copy, Clone)]
-enum PlayerRoundResult {
+pub enum PlayerRoundResult {
+    /// Natural or Blackjack is when the player has 21 in the first two cards. (But if the dealer matches then it's a standoff)
+    Natural,
+    /// If they have more than the dealer at the end of the round or the dealer goes bust while they stand.
     Win,
+    /// If they go bust or if the dealer has more than them at the end of the round.
     Lose,
+    /// If their value and the dealer's are exactly equal at the end of the round.
     Standoff,
 }
 
@@ -33,18 +42,19 @@ impl fmt::Display for PlayerRoundResult {
     /// Shows a player's win/lose condition in a more human-readable way.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            PlayerRoundResult::Win => write!(f, "You win! Congratulations! :)"),
-            PlayerRoundResult::Lose => write!(f, "You lose, sorry. Thanks for playing!"),
+            PlayerRoundResult::Natural => write!(f, "Blackjack! Wow, lucky!"),
+            PlayerRoundResult::Win => write!(f, "You win! Congratulations!"),
+            PlayerRoundResult::Lose => write!(f, "Sorry, you lose."),
             PlayerRoundResult::Standoff => write!(f, "It's a stand-off!"),
         }
     }
 }
 
-type PlayerResult = (Box<dyn player::BlackjackPlayer>, PlayerRoundResult);
+type PlayerResult = (Box<dyn Player>, PlayerRoundResult);
 
 type RoundResult = Vec<PlayerResult>;
 
-enum IntermediateRoundResult<D: player::BlackjackDealer> {
+enum IntermediateRoundResult<D: Dealer> {
     Finished {
         results: RoundResult,
         leftover_deck: cards::Deck,
@@ -52,32 +62,32 @@ enum IntermediateRoundResult<D: player::BlackjackDealer> {
     Unfinished(InProgressGame<D>),
 }
 
-struct ReadyGame<D: player::BlackjackDealer> {
-    players: Vec<Box<dyn player::BlackjackPlayer>>,
+struct ReadyGame<D: Dealer> {
+    players: Vec<Box<dyn Player>>,
     dealer: D,
     deck: cards::Deck,
 }
 
-struct InProgressGame<D: player::BlackjackDealer> {
-    players: Vec<Box<dyn player::BlackjackPlayer>>,
+struct InProgressGame<D: Dealer> {
+    players: Vec<Box<dyn Player>>,
     dealer: D,
     deck: cards::Deck,
 }
 
 impl<D> ReadyGame<D>
 where
-    D: player::BlackjackDealer,
+    D: Dealer,
 {
     fn new(options: &GameOptions) -> ReadyGame<D> {
-        let mut players: Vec<Box<dyn player::BlackjackPlayer>> = Vec::new();
+        let mut players: Vec<Box<dyn players::Player>> = Vec::new();
 
         if options.bot_player {
-            players.push(Box::new(player::AutoPlayer::new()));
+            players.push(Box::new(players::AutoPlayer::new(options.betting_buyin)));
         }
 
         for _ in 0..options.num_players {
             // Will change with multiplayer and such -- We will have to call new on different players!
-            players.push(Box::new(player::HumanPlayer::new()));
+            players.push(Box::new(players::HumanPlayer::new(options.betting_buyin)));
         }
 
         let mut deck = cards::create_multideck(options.num_decks);
@@ -91,6 +101,12 @@ where
     }
 
     fn deal_hands(mut self) -> InProgressGame<D> {
+        for player in &mut self.players {
+            player.set_bet();
+        }
+
+        println!("");
+
         for _ in 0..2 {
             for player in &mut self.players {
                 player.recieve_card(self.deck.pop().unwrap());
@@ -104,11 +120,38 @@ where
             deck: self.deck,
         }
     }
+
+    fn from_previous_round(
+        players: Vec<Box<dyn Player>>,
+        leftover_deck: cards::Deck,
+        options: &GameOptions,
+    ) -> ReadyGame<D> {
+        let mut ready_players: Vec<Box<dyn Player>> = Vec::new();
+        for mut player in players {
+            player.buy_in_if_broke(options.betting_buyin);
+            ready_players.push(player);
+        }
+
+        let mut deck: cards::Deck;
+        if leftover_deck.len() > get_reshuffle_number(options.num_decks).try_into().unwrap() {
+            deck = leftover_deck;
+        } else {
+            println!("Reshuffling deck...\n");
+            deck = cards::create_multideck(options.num_decks);
+            cards::shuffle_deck(&mut deck);
+        };
+
+        ReadyGame {
+            players: ready_players,
+            dealer: D::new(),
+            deck,
+        }
+    }
 }
 
 impl<D> InProgressGame<D>
 where
-    D: player::BlackjackDealer,
+    D: Dealer,
 {
     fn handle_naturals(self) -> IntermediateRoundResult<D> {
         let mut round_results: RoundResult = Vec::new();
@@ -138,8 +181,7 @@ where
                 self.dealer.show_true_hand();
                 for player in self.players {
                     player.show_hand();
-                    println!("Blackjack!");
-                    round_results.push((player, PlayerRoundResult::Win));
+                    round_results.push((player, PlayerRoundResult::Natural));
                 }
                 return IntermediateRoundResult::Finished {
                     results: round_results,
@@ -186,7 +228,7 @@ where
             let mut round_results: RoundResult = Vec::new();
             for player in self.players {
                 if hand_is_natural(player.get_hand_slice()) {
-                    round_results.push((player, PlayerRoundResult::Win))
+                    round_results.push((player, PlayerRoundResult::Natural))
                 } else {
                     round_results.push((player, PlayerRoundResult::Lose))
                 }
@@ -200,11 +242,11 @@ where
     }
 
     fn dealer_turn(mut self) -> IntermediateRoundResult<D> {
-        println!("---{}'s turn!---", self.dealer.get_name());
+        println!("---Dealer's turn!---");
         loop {
             self.dealer.show_true_hand();
             if hand_is_bust(self.dealer.get_hand_slice()) {
-                println!("{} goes bust!", self.dealer.get_name());
+                println!("Dealer goes bust!");
                 let mut round_results: RoundResult = Vec::new();
                 for player in self.players {
                     if hand_is_bust(player.get_hand_slice()) {
@@ -218,8 +260,7 @@ where
                     leftover_deck: self.deck,
                 };
             }
-            let upcard = &self.dealer.get_hand_slice()[1].clone();
-            let turn_over = self.dealer.take_turn(&mut self.deck, upcard);
+            let turn_over = self.dealer.take_turn(&mut self.deck);
             if turn_over {
                 break;
             }
@@ -339,12 +380,16 @@ pub fn hand_is_bust(hand: &[cards::Card]) -> bool {
 }
 
 /// Settles the round--goes over the results (and bets once those are added)
-fn settle_round(round_results: RoundResult) {
+fn settle_round(round_results: RoundResult, &payout_ratio: &f64) -> Vec<Box<dyn Player>> {
     println!("");
-    for (player, result) in round_results {
+    let mut new_players: Vec<Box<dyn Player>> = Vec::new();
+    for (mut player, result) in round_results {
         //player.show_hand();
-        println!("{}: {}", player.get_name(), result);
+        player.discard_hand();
+        player.handle_round_result(result, payout_ratio);
+        new_players.push(player);
     }
+    new_players
 }
 
 /// Gets the point at which the deck needs to be reshuffled. Basically acts like the
@@ -355,9 +400,31 @@ fn settle_round(round_results: RoundResult) {
 ///
 /// * `num_decks` - number of decks used to create the deck for the game. Should be same
 /// value that's passed into `cards::create_multideck(num_decks)`
-fn get_reshuffle_number(num_decks: &u32) -> u32 {
+fn get_reshuffle_number(num_decks: u32) -> u32 {
     let deck_card_count = u32::try_from(cards::STANDARD_DECK_COUNT).unwrap();
     cmp::max(40, num_decks * deck_card_count / 5)
+}
+
+fn should_play_another_round() -> bool {
+    println!("\nPlay another round? [Y/n]");
+
+    loop {
+        let mut input = String::new();
+
+        io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read line");
+
+        let input = input.trim();
+
+        match &input.to_lowercase()[..] {
+            "" | "yes" | "y" => return true,
+            "n" | "No" | "q" | "quit" | "e" | "exit" => return false,
+            _ => println!(
+                "Sorry, what was that? (try yes, no, exit, or the first letters of any of those."
+            ),
+        }
+    }
 }
 
 /// From a GameOptions describing the settings of the game, play a full game of blackjack.
@@ -370,8 +437,9 @@ fn get_reshuffle_number(num_decks: &u32) -> u32 {
 ///
 /// let options = blackjack::GameOptions {
 /// num_players: 1,
-/// bot_player: true,
+/// bot_player: false,
 /// num_decks: 6,
+/// betting_buyin: 500,
 /// payout_ratio: 1.5,
 /// };
 ///
@@ -379,26 +447,30 @@ fn get_reshuffle_number(num_decks: &u32) -> u32 {
 /// ```
 pub fn play_blackjack<D>(options: GameOptions)
 where
-    D: player::BlackjackDealer,
+    D: Dealer,
 {
-    let game: ReadyGame<D> = ReadyGame::new(&options);
-
-    let _reshuffle_at = get_reshuffle_number(&options.num_decks);
-    let _betting_ratio = &options.payout_ratio;
+    let mut game: ReadyGame<D> = ReadyGame::new(&options);
 
     loop {
         let round = game.deal_hands();
 
         let finished_round = round.play_round();
 
-        let (round_results, _leftover_deck) = finished_round;
+        let (round_results, leftover_deck) = finished_round;
 
-        settle_round(round_results);
+        let next_players = settle_round(round_results, &options.payout_ratio);
 
+        // Check if they want to play another round.
         // Optionally continue playing rounds (and add/drop players?)
-
-        break;
+        if should_play_another_round() {
+            println!("");
+            game = ReadyGame::from_previous_round(next_players, leftover_deck, &options);
+        } else {
+            break;
+        }
     }
+
+    println!("Thanks for playing!")
 }
 
 #[cfg(test)]

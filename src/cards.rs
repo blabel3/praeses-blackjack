@@ -73,7 +73,7 @@ pub struct Card {
     pub suit: Suit,
 }
 
-/// Representing the cards used in dealing and to give to players. Nobody owns it other than the game itself!
+/// Represents the cards used in dealing and to give to players. Nobody owns it other than the game itself!
 pub type Deck = Vec<Card>;
 
 /// Represents the cards that a player owns.
