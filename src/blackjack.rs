@@ -313,7 +313,7 @@ pub fn get_raw_hand_value(hand: &[cards::Card]) -> u32 {
     values.iter().sum()
 }
 
-/// Return true if the hand has an ace that can be counted as 11. 
+/// Return true if the hand has an ace that can be counted as 11.
 pub fn is_soft_hand(raw_value: u32, hand: &[cards::Card]) -> bool {
     raw_value <= 11 && hand.iter().any(|&card| card.rank == cards::Rank::Ace)
 }
