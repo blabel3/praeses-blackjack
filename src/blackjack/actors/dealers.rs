@@ -1,10 +1,13 @@
+//! Dealer-specific logic. Dealers are generally more simple than players, with very straightforward
+//! behavior and a limited set of actions compared to players. They also don't bet--they only take money!
+
 use crate::blackjack::{self, actors};
 use crate::cards;
 
 /// A trait representing the dealer in a game of blackjack.
 /// They act similarly to players, but with a bit more behaviors needed.
 pub trait Dealer: actors::Actor {
-    /// Creates a new Dealer
+    /// Creates a new object implementing Dealer.
     fn new() -> Self
     where
         Self: Sized;
@@ -36,7 +39,7 @@ pub trait Dealer: actors::Actor {
         }
     }
 
-    /// A dealer's turn logic is in here!
+    /// Decide what action to take and handle that action. Returns true if they can take another turn. 
     fn take_turn(&mut self, deck: &mut cards::Deck) -> bool {
         let action = self.decide_action();
         self.handle_dealer_action(action, deck)

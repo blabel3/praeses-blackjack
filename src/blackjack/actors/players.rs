@@ -1,3 +1,8 @@
+//! Player-specific logic. Players need to worry about betting and can take actions
+//! that dealers can't, so this is for modeling players who are sitting at the casino table.
+//! Using this, you can create players that behave differently but all 
+//! act within the allowed moves in Blackjack.
+
 use std::io;
 
 use crate::blackjack::actors::Actor;
@@ -6,7 +11,7 @@ use crate::cards;
 
 /// A trait representing behavior every player in a game of blackjack should be able to handle.
 pub trait Player: actors::Actor {
-    /// Creates a new BlackjackPlayer
+    /// Creates a new object that implements Player.
     fn new(buyin: u32) -> Self
     where
         Self: Sized;
@@ -20,7 +25,7 @@ pub trait Player: actors::Actor {
     /// Gets how much money a player is betting on the current round.
     fn get_bet(&mut self) -> &mut Option<u32>;
 
-    /// Solicits how much a player wants to bet and puts that money aside for betting
+    /// Solicits how much a player wants to bet and puts that money aside for betting.
     fn set_bet(&mut self);
 
     /// Gives the player more money if they are out of it to keep the game going.  
@@ -51,7 +56,7 @@ pub trait Player: actors::Actor {
         }
     }
 
-    /// A player's turn logic is in here!
+    /// Decide what action to take and handle that action. Returns true if they can take another turn. 
     fn take_turn(&mut self, deck: &mut cards::Deck, dealer_upcard: &cards::Card) -> bool {
         let action = self.decide_action(dealer_upcard);
         self.handle_player_action(action, deck)
@@ -105,7 +110,7 @@ pub trait Player: actors::Actor {
     }
 }
 
-/// A player controlled by a human and their input into the commandline. Their output is sent to stdout.
+/// A player controlled by a human and their input into the terminal. Their output is sent to stdout.
 pub struct HumanPlayer {
     name: String,
     hand: cards::Hand,
@@ -253,7 +258,7 @@ impl HumanPlayer {
 }
 
 /// A simple bot acting as a player that will always do the most optimal move
-/// Given their hand and without counting cards.
+/// given their hand without counting cards.
 pub struct AutoPlayer {
     hand: cards::Hand,
     money: Option<u32>,

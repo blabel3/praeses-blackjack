@@ -1,9 +1,6 @@
 //! Logic for Blackjack actors: what behaviors everyone involved in a game of blackjack
-//! (dealers, players, etc) needs to know how to do.
-//! How they decide what to do and
-//! what happens when they make their action are here. Using this,
-//! you can create players that behave differently but all act
-//! within the allowed moves in Blackjack.
+//! (dealers, players, etc) needs to know how to do. This doesn't have much use by itself 
+//! but is a good base to build more specific structs off of. 
 
 pub mod dealers;
 pub mod players;
@@ -13,9 +10,9 @@ use crate::cards;
 /// Supported player actions.
 #[derive(Debug, PartialEq)]
 pub enum Action {
-    /// Adds a card from the deck to your hand
+    /// Adds a card from the deck to hand.
     Hit,
-    /// Keep the cards in your hand and pass to the next player
+    /// Keep the cards in hand and pass to the next player.
     Stand,
 }
 
@@ -40,7 +37,7 @@ pub trait Actor {
     /// Get a mutable reference to the actor's hand, all the cards they have.
     fn get_hand(&mut self) -> &mut cards::Hand;
 
-    /// gets a slice of all cards from an actor's hand. Read-only (as slices are)
+    /// Get a slice of all cards from an actor's hand. Read-only (as slices are)
     fn get_hand_slice(&self) -> &[cards::Card];
 
     /// Display the actor's current hand in a natural way.
