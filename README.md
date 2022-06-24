@@ -48,7 +48,7 @@ To contribute to the project, first set up your environment by following the dir
 
 To make edits to the code, first, make sure you're in a new branch! The repo is set up to not allow commits directly on main to make sure the main branch is stable.
 
-Pick out an issue in the repo's issues to tackle, and think carefully about how to change the code to best handle it. 
+Pick out an issue in the repo's issues to tackle, and think carefully about how to change the code to best handle it. Issues labelled "priority" or "good first issue" might be good issues to take on. 
 
 Then you can make your changes! Remember it can be a good idea to run `cargo check` periodically, and before you commit it's also good to run `cargo fmt` so that the code is formatted consistently. 
 
