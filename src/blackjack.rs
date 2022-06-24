@@ -44,7 +44,7 @@ impl fmt::Display for PlayerRoundResult {
         match self {
             PlayerRoundResult::Natural => write!(f, "Blackjack! Wow, lucky!"),
             PlayerRoundResult::Win => write!(f, "You win! Congratulations!"),
-            PlayerRoundResult::Lose => write!(f, "You lose, sorry. Thanks for playing!"),
+            PlayerRoundResult::Lose => write!(f, "Sorry, you lose."),
             PlayerRoundResult::Standoff => write!(f, "It's a stand-off!"),
         }
     }
@@ -104,6 +104,8 @@ where
         for player in &mut self.players {
             player.set_bet();
         }
+
+        println!("");
 
         for _ in 0..2 {
             for player in &mut self.players {
@@ -383,6 +385,7 @@ fn settle_round(round_results: RoundResult, &payout_ratio: &f64) -> Vec<Box<dyn 
     let mut new_players: Vec<Box<dyn Player>> = Vec::new();
     for (mut player, result) in round_results {
         //player.show_hand();
+        player.discard_hand();
         player.handle_round_result(result, payout_ratio);
         new_players.push(player);
     }
@@ -403,7 +406,7 @@ fn get_reshuffle_number(num_decks: u32) -> u32 {
 }
 
 fn should_play_another_round() -> bool {
-    println!("\nWould you like to play another round? [Y/n]");
+    println!("\nPlay another round? [Y/n]");
 
     loop {
         let mut input = String::new();
@@ -463,9 +466,11 @@ where
             println!("");
             game = ReadyGame::from_previous_round(next_players, leftover_deck, &options);
         } else {
-            return;
+            break;
         }
     }
+
+    println!("Thanks for playing!")
 }
 
 #[cfg(test)]

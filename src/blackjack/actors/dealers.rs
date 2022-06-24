@@ -12,7 +12,7 @@ pub trait Dealer: actors::Actor {
     /// Shows the true hand of the dealer (because usually their complete hand will be hidden from players).
     fn show_true_hand(&self);
 
-    /// Get what action a dealer should take. Should be the same for all dealers 
+    /// Get what action a dealer should take. Should be the same for all dealers
     /// so a default implementation is provided.
     fn decide_action(&self) -> actors::Action {
         if blackjack::get_hand_value(self.get_hand_slice()) >= 17 {
@@ -22,7 +22,7 @@ pub trait Dealer: actors::Actor {
         }
     }
 
-    /// Carry out a dealer's actions in the game. Dopesn't depend on anything but their cards. 
+    /// Carry out a dealer's actions in the game. Dopesn't depend on anything but their cards.
     /// Returns true or false if they can take another turn or not.
     fn handle_dealer_action(&mut self, action: actors::Action, deck: &mut cards::Deck) -> bool {
         match action {
@@ -97,25 +97,25 @@ mod tests {
         assert_eq!(dealer.decide_action(), action);
     }
 
-    /// Making sure the dealer can add a card to their hand. 
+    /// Making sure the dealer can add a card to their hand.
     #[test]
     fn standard_dealer_adds_card_to_hand() {
         actor_tests::add_card_to_hand(StandardDealer::new());
     }
 
-    /// Check that the dealer's actions follow blackjack rules. 
+    /// Check that the dealer's actions follow blackjack rules.
     #[test]
     fn standard_dealer_acts_properly() {
-        // Dealer has to stand at 17. 
+        // Dealer has to stand at 17.
         check_action_from_cards::<StandardDealer>((7, 10), actors::Action::Stand);
 
-        // Dealer should also stand at a soft 18. 
+        // Dealer should also stand at a soft 18.
         check_action_from_cards::<StandardDealer>((7, 1), actors::Action::Stand);
 
-        // Dealer should hit at 12. 
+        // Dealer should hit at 12.
         check_action_from_cards::<StandardDealer>((4, 8), actors::Action::Hit);
 
-        // Dealer should also hit at a soft 13. 
+        // Dealer should also hit at a soft 13.
         check_action_from_cards::<StandardDealer>((1, 2), actors::Action::Hit);
     }
 }

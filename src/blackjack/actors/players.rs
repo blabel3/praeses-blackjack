@@ -11,14 +11,14 @@ pub trait Player: actors::Actor {
     where
         Self: Sized;
 
-    /// Returns a string slice representing this player's name. 
+    /// Returns a string slice representing this player's name.
     fn get_name(&self) -> &str;
 
-    /// Gets the total money a player has currently. 
+    /// Gets the total money a player has currently.
     fn get_money(&mut self) -> &mut Option<u32>;
 
-    /// Gets how much money a player is betting on the current round. 
-    fn get_bet(&self) -> &Option<u32>;
+    /// Gets how much money a player is betting on the current round.
+    fn get_bet(&mut self) -> &mut Option<u32>;
 
     /// Solicits how much a player wants to bet and puts that money aside for betting
     fn set_bet(&mut self);
@@ -33,9 +33,6 @@ pub trait Player: actors::Actor {
             *self.get_money() = Some(buy_in_amount);
         }
     }
-
-    /// Handles the result for a player at the end of a round (showing it to the user, updating bet/money). 
-    fn handle_round_result(&mut self, result: blackjack::PlayerRoundResult, payout_ratio: f64);
 
     /// Get what action a player should take.
     fn decide_action(&self, dealer_upcard: &cards::Card) -> actors::Action;
@@ -58,6 +55,53 @@ pub trait Player: actors::Actor {
     fn take_turn(&mut self, deck: &mut cards::Deck, dealer_upcard: &cards::Card) -> bool {
         let action = self.decide_action(dealer_upcard);
         self.handle_player_action(action, deck)
+    }
+
+    /// Handles the result for a player at the end of a round (showing it to the user, updating bet/money).
+    fn handle_round_result(&mut self, result: blackjack::PlayerRoundResult, payout_ratio: f64) {
+        print!("{}: {} ", self.get_name(), result);
+        if self.get_bet().is_none() {
+            println!("");
+            return;
+        }
+
+        let bet = self.get_bet().unwrap();
+        match result {
+            blackjack::PlayerRoundResult::Natural => {
+                let winnings = bet + (payout_ratio * bet as f64).floor() as u32;
+                *self.get_money() = Some(self.get_money().unwrap() + winnings);
+                println!(
+                    "You won ${}. (Total cash: ${})",
+                    winnings,
+                    self.get_money().unwrap()
+                );
+            }
+            blackjack::PlayerRoundResult::Win => {
+                let winnings: u32 = bet + bet;
+                *self.get_money() = Some(self.get_money().unwrap() + winnings);
+                println!(
+                    "You won ${}. (Total cash: ${})",
+                    winnings,
+                    self.get_money().unwrap()
+                );
+            }
+            blackjack::PlayerRoundResult::Standoff => {
+                *self.get_money() = Some(self.get_money().unwrap() + bet);
+                println!(
+                    "You kept your original ${} bet (Total cash: ${})",
+                    bet,
+                    self.get_money().unwrap()
+                );
+            }
+            blackjack::PlayerRoundResult::Lose => {
+                println!(
+                    "You lost your ${} bet. (Total cash: ${})",
+                    bet,
+                    self.get_money().unwrap()
+                );
+            }
+        }
+        *self.get_bet() = None;
     }
 }
 
@@ -124,21 +168,8 @@ impl Player for HumanPlayer {
         &mut self.money
     }
 
-    fn decide_action(&self, _dealer_upcard: &cards::Card) -> actors::Action {
-        println!("{}", actors::Action::ACTION_PROMPT);
-
-        loop {
-            let mut input = String::new();
-
-            io::stdin()
-                .read_line(&mut input)
-                .expect("Failed to read line");
-
-            match actors::Action::parse_from_string(&input) {
-                Ok(action) => return action,
-                Err(e) => println!("{}, try again.", e),
-            }
-        }
+    fn get_bet(&mut self) -> &mut Option<u32> {
+        &mut self.bet
     }
 
     fn set_bet(&mut self) {
@@ -190,64 +221,26 @@ impl Player for HumanPlayer {
         }
     }
 
-    fn get_bet(&self) -> &Option<u32> {
-        &self.bet
-    }
+    fn decide_action(&self, _dealer_upcard: &cards::Card) -> actors::Action {
+        println!("{}", actors::Action::ACTION_PROMPT);
 
-    fn handle_round_result(&mut self, result: blackjack::PlayerRoundResult, payout_ratio: f64) {
-        self.hand.clear();
-        print!("{}: {} ", self.get_name(), result);
-        if self.get_bet().is_none() {
-            println!("");
-        } else {
-            let bet = self.get_bet().unwrap();
-            match result {
-                blackjack::PlayerRoundResult::Natural => {
-                    let winnings = bet + (payout_ratio * bet as f64).floor() as u32;
-                    self.money = Some(self.money.unwrap() + winnings);
-                    self.bet = None;
-                    println!(
-                        "You won: ${} (Total cash: ${})",
-                        winnings,
-                        self.get_money().unwrap()
-                    );
-                }
-                blackjack::PlayerRoundResult::Win => {
-                    let winnings: u32 = bet + bet;
-                    self.money = Some(self.money.unwrap() + winnings);
-                    self.bet = None;
-                    println!(
-                        "You won: ${} (Total cash: ${})",
-                        winnings,
-                        self.get_money().unwrap()
-                    );
-                }
-                blackjack::PlayerRoundResult::Standoff => {
-                    self.money = Some(self.money.unwrap() + bet);
-                    self.bet = None;
-                    println!(
-                        "You kept your original bet ${} (Total cash: ${})",
-                        bet,
-                        self.get_money().unwrap()
-                    );
-                    return;
-                }
-                blackjack::PlayerRoundResult::Lose => {
-                    self.bet = None;
-                    println!(
-                        "You lost your bet ${} (Total cash: ${})",
-                        bet,
-                        self.get_money().unwrap()
-                    );
-                    return;
-                }
+        loop {
+            let mut input = String::new();
+
+            io::stdin()
+                .read_line(&mut input)
+                .expect("Failed to read line");
+
+            match actors::Action::parse_from_string(&input) {
+                Ok(action) => return action,
+                Err(e) => println!("{}, try again.", e),
             }
         }
     }
 }
 
 impl HumanPlayer {
-    /// Used in testing to not need person's input to create a HumanPlayer. 
+    /// Used in testing to not need person's input to create a HumanPlayer.
     #[allow(dead_code)]
     fn new_default() -> HumanPlayer {
         HumanPlayer {
@@ -307,9 +300,17 @@ impl Player for AutoPlayer {
         &mut self.money
     }
 
+    fn get_bet(&mut self) -> &mut Option<u32> {
+        &mut self.bet
+    }
+
+    fn set_bet(&mut self) {
+        // Maybe put in bot betting logic.
+        //println!("Getting bet for {}", self.get_name());
+    }
+
     fn decide_action(&self, dealer_upcard: &cards::Card) -> actors::Action {
         // If the player has a soft hand, hit until at least 18.
-
         if blackjack::is_soft_hand(
             blackjack::get_raw_hand_value(self.get_hand_slice()),
             self.get_hand_slice(),
@@ -321,8 +322,8 @@ impl Player for AutoPlayer {
             }
         }
 
-        let stop_at: u32;
-        match dealer_upcard.rank {
+        let stop_at = match dealer_upcard.rank {
+            // Good hands
             cards::Rank::Ace
             | cards::Rank::Seven
             | cards::Rank::Eight
@@ -330,10 +331,12 @@ impl Player for AutoPlayer {
             | cards::Rank::Ten
             | cards::Rank::Jack
             | cards::Rank::Queen
-            | cards::Rank::King => stop_at = 17,
-            cards::Rank::Four | cards::Rank::Five | cards::Rank::Six => stop_at = 12,
-            cards::Rank::Two | cards::Rank::Three => stop_at = 13,
-        }
+            | cards::Rank::King => 17,
+            // Poor hands
+            cards::Rank::Four | cards::Rank::Five | cards::Rank::Six => 12,
+            // Fair hands
+            cards::Rank::Two | cards::Rank::Three => 13,
+        };
 
         if blackjack::get_hand_value(self.get_hand_slice()) >= stop_at {
             actors::Action::Stand
@@ -341,70 +344,16 @@ impl Player for AutoPlayer {
             actors::Action::Hit
         }
     }
+}
 
-    fn set_bet(&mut self) {
-        // Maybe put in bot betting logic.
-        //println!("Getting bet for {}", self.get_name());
-    }
-
-    fn get_bet(&self) -> &Option<u32> {
-        &self.bet
-    }
-
-    fn buy_in_if_broke(&mut self, buy_in_amount: u32) {
-        if self.money == Some(0) {
-            self.money = Some(buy_in_amount);
-        }
-    }
-
-    fn handle_round_result(&mut self, result: blackjack::PlayerRoundResult, payout_ratio: f64) {
-        self.hand.clear();
-        print!("{}: {} ", self.get_name(), result);
-        if self.get_bet().is_none() {
-            println!("");
-        } else {
-            let bet = self.get_bet().unwrap();
-            match result {
-                blackjack::PlayerRoundResult::Natural => {
-                    let winnings = bet + (payout_ratio * bet as f64).floor() as u32;
-                    self.money = Some(self.money.unwrap() + winnings);
-                    self.bet = None;
-                    println!(
-                        "You won ${} (Total cash: ${})",
-                        winnings,
-                        self.get_money().unwrap()
-                    );
-                }
-                blackjack::PlayerRoundResult::Win => {
-                    let winnings: u32 = bet + bet;
-                    self.money = Some(self.money.unwrap() + winnings);
-                    self.bet = None;
-                    println!(
-                        "You won ${} (Total cash: ${})",
-                        winnings,
-                        self.get_money().unwrap()
-                    );
-                }
-                blackjack::PlayerRoundResult::Standoff => {
-                    self.money = Some(self.money.unwrap() + bet);
-                    self.bet = None;
-                    println!(
-                        "You kept your original ${} bet (Total cash: ${})",
-                        bet,
-                        self.get_money().unwrap()
-                    );
-                    return;
-                }
-                blackjack::PlayerRoundResult::Lose => {
-                    self.bet = None;
-                    println!(
-                        "You lost your ${} bet. (Total cash: ${})",
-                        bet,
-                        self.get_money().unwrap()
-                    );
-                    return;
-                }
-            }
+impl AutoPlayer {
+    /// Used in testing to not need person's input to create a HumanPlayer.
+    #[allow(dead_code)]
+    fn new_default() -> AutoPlayer {
+        AutoPlayer {
+            hand: Vec::new(),
+            money: None,
+            bet: None,
         }
     }
 }
@@ -415,6 +364,7 @@ mod tests {
     use super::*;
     use crate::blackjack::actors;
 
+    /// Helper function for checking player actions given their cards and what they can see from the dealer.
     fn check_action_from_cards<T: Player>(
         card_values: (u32, u32),
         upcard: u32,
@@ -427,9 +377,15 @@ mod tests {
         assert_eq!(player.decide_action(&upcard), action);
     }
 
+    /// Check that
     #[test]
-    fn player_adds_card_to_hand() {
+    fn human_player_adds_card_to_hand() {
         actor_tests::add_card_to_hand(HumanPlayer::new_default());
+    }
+
+    #[test]
+    fn bot_player_adds_card_to_hand() {
+        actor_tests::add_card_to_hand(AutoPlayer::new_default());
     }
 
     #[test]

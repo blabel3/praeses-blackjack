@@ -35,7 +35,7 @@ impl Action {
     }
 }
 
-/// General trait for behavior that both players and dealers should implement. 
+/// General trait for behavior that both players and dealers should implement.
 pub trait Actor {
     /// Get a mutable reference to the actor's hand, all the cards they have.
     fn get_hand(&mut self) -> &mut cards::Hand;
@@ -61,7 +61,7 @@ pub trait Actor {
 mod tests {
     use super::*;
 
-    /// Function that tests for any actor whether they properly add a card to their hand. 
+    /// Function that tests for any actor whether they properly add a card to their hand.
     pub fn add_card_to_hand<T: Actor>(mut actor: T) {
         assert_eq!(0, actor.get_hand_slice().len());
         actor.recieve_card(cards::Card {
@@ -72,7 +72,7 @@ mod tests {
         assert_eq!(1, actor.get_hand_slice().len());
     }
 
-    /// Helper function for creating cards succinctly, when we don't care about the suit. 
+    /// Helper function for creating cards succinctly, when we don't care about the suit.
     pub fn create_card_from_value(value: u32) -> cards::Card {
         match value {
             1 => cards::Card {
@@ -119,7 +119,7 @@ mod tests {
         }
     }
 
-    /// Checks that given input is parsed properly 
+    /// Checks that given input is parsed properly
     #[test]
     fn parses_action_from_string() {
         assert_eq!(Action::parse_from_string("hit").unwrap(), Action::Hit);
