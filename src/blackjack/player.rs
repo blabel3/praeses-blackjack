@@ -23,7 +23,7 @@ impl Action {
     /// From an input string, return an action if there is an appropriate match found.
     /// If not, return an error.
     pub fn parse_from_string(input: &str) -> Result<Self, &'static str> {
-        let input = &input.to_lowercase()[..];
+        let input = &input.trim().to_lowercase()[..];
         match input {
             "hit" | "h" => Ok(Self::Hit),
             "stand" | "s" => Ok(Self::Stand),
@@ -129,8 +129,6 @@ impl BlackjackPlayer for HumanPlayer {
                 .read_line(&mut input)
                 .expect("Failed to read line");
 
-            input = input.trim().to_string();
-
             match Action::parse_from_string(&input) {
                 Ok(action) => return action,
                 Err(e) => println!("{}, try again.", e),
@@ -155,6 +153,17 @@ impl BlackjackPlayer for HumanPlayer {
 
     fn recieve_card(&mut self, card: cards::Card) {
         self.hand.push(card);
+    }
+}
+
+impl HumanPlayer {
+    /// Used in testing to not need person's input.
+    #[allow(dead_code)]
+    fn new_default() -> HumanPlayer {
+        HumanPlayer {
+            name: "Player".to_string(),
+            hand: Vec::new(),
+        }
     }
 }
 
@@ -348,11 +357,46 @@ mod tests {
         }
     }
 
-    // Broken because it waits for a name input, looking into solutions
-    //#[test]
-    //fn player_adds_card_to_hand() {
-    //    add_card_to_hand(HumanPlayer::new());
-    //}
+    fn check_action_from_cards<T: BlackjackPlayer>(
+        card_values: (u32, u32),
+        upcard: Option<u32>,
+        action: Action,
+    ) {
+        let upcard = create_card_from_value(upcard.unwrap_or(1));
+        let mut player = T::new();
+        player.recieve_card(create_card_from_value(card_values.0));
+        player.recieve_card(create_card_from_value(card_values.1));
+        assert_eq!(player.get_action(&upcard), action);
+    }
+
+    #[test]
+    fn player_adds_card_to_hand() {
+        add_card_to_hand(HumanPlayer::new_default());
+    }
+
+    #[test]
+    fn parses_action_from_string() {
+        assert_eq!(Action::parse_from_string("hit").unwrap(), Action::Hit);
+        assert_eq!(Action::parse_from_string("h").unwrap(), Action::Hit);
+        assert_eq!(Action::parse_from_string(" hit").unwrap(), Action::Hit);
+        assert_eq!(Action::parse_from_string("hit ").unwrap(), Action::Hit);
+        assert_eq!(Action::parse_from_string("Hit").unwrap(), Action::Hit);
+        assert_eq!(Action::parse_from_string("HIT").unwrap(), Action::Hit);
+
+        assert_eq!(Action::parse_from_string("stand").unwrap(), Action::Stand);
+        assert_eq!(Action::parse_from_string("s").unwrap(), Action::Stand);
+        assert_eq!(Action::parse_from_string(" stand").unwrap(), Action::Stand);
+        assert_eq!(Action::parse_from_string("stand ").unwrap(), Action::Stand);
+        assert_eq!(Action::parse_from_string("Stand").unwrap(), Action::Stand);
+        assert_eq!(Action::parse_from_string("STAND").unwrap(), Action::Stand);
+
+        assert!(Action::parse_from_string("shmit").is_err());
+        assert!(Action::parse_from_string("stund").is_err());
+        assert!(Action::parse_from_string("hoot").is_err());
+        assert!(Action::parse_from_string("ham").is_err());
+        assert!(Action::parse_from_string("praeses").is_err());
+        assert!(Action::parse_from_string("blake").is_err());
+    }
 
     #[test]
     fn dealer_adds_card_to_hand() {
@@ -361,90 +405,37 @@ mod tests {
 
     #[test]
     fn dealer_acts_properly() {
-        let upcard = create_card_from_value(1);
-
-        let mut dealer = Dealer::new();
-        dealer.recieve_card(create_card_from_value(7));
-        dealer.recieve_card(create_card_from_value(10));
-        assert_eq!(dealer.get_action(&upcard), Action::Stand);
-
-        let mut dealer = Dealer::new();
-        dealer.recieve_card(create_card_from_value(10));
-        dealer.recieve_card(create_card_from_value(10));
-        assert_eq!(dealer.get_action(&upcard), Action::Stand);
-
-        let mut dealer = Dealer::new();
-        dealer.recieve_card(create_card_from_value(7));
-        dealer.recieve_card(create_card_from_value(1));
-        assert_eq!(dealer.get_action(&upcard), Action::Stand);
-
-        let mut dealer = Dealer::new();
-        dealer.recieve_card(create_card_from_value(4));
-        dealer.recieve_card(create_card_from_value(8));
-        assert_eq!(dealer.get_action(&upcard), Action::Hit);
-
-        let mut dealer = Dealer::new();
-        dealer.recieve_card(create_card_from_value(9));
-        dealer.recieve_card(create_card_from_value(7));
-        assert_eq!(dealer.get_action(&upcard), Action::Hit);
+        check_action_from_cards::<Dealer>((7, 10), None, Action::Stand);
+        check_action_from_cards::<Dealer>((10, 10), None, Action::Stand);
+        check_action_from_cards::<Dealer>((7, 1), None, Action::Stand);
+        check_action_from_cards::<Dealer>((4, 8), None, Action::Hit);
+        check_action_from_cards::<Dealer>((9, 7), None, Action::Hit);
     }
 
     #[test]
     fn bot_acts_properly() {
         // If you have an ace, stand at value of 18 or more.
-        let mut bot = AutoPlayer::new();
-        let upcard = create_card_from_value(5);
-        bot.recieve_card(create_card_from_value(1));
-        bot.recieve_card(create_card_from_value(7));
-        assert_eq!(bot.get_action(&upcard), Action::Stand);
+        check_action_from_cards::<AutoPlayer>((1, 7), None, Action::Stand);
 
         // If you have an ace, hit at a value of 17 or less.
-        let mut bot = AutoPlayer::new();
-        let upcard = create_card_from_value(5);
-        bot.recieve_card(create_card_from_value(1));
-        bot.recieve_card(create_card_from_value(6));
-        assert_eq!(bot.get_action(&upcard), Action::Hit);
+        check_action_from_cards::<AutoPlayer>((1, 6), None, Action::Hit);
 
         // If the dealer's card is good, stand at 17 or more.
-        let mut bot = AutoPlayer::new();
-        let upcard = create_card_from_value(10);
-        bot.recieve_card(create_card_from_value(10));
-        bot.recieve_card(create_card_from_value(7));
-        assert_eq!(bot.get_action(&upcard), Action::Stand);
+        check_action_from_cards::<AutoPlayer>((10, 7), Some(10), Action::Stand);
 
         // If the dealer's card is good, hit at 16 or less.
-        let mut bot = AutoPlayer::new();
-        let upcard = create_card_from_value(10);
-        bot.recieve_card(create_card_from_value(10));
-        bot.recieve_card(create_card_from_value(6));
-        assert_eq!(bot.get_action(&upcard), Action::Hit);
+        check_action_from_cards::<AutoPlayer>((10, 6), Some(10), Action::Hit);
 
         // If the dealer's card is bad, stand at 12 or more.
-        let mut bot = AutoPlayer::new();
-        let upcard = create_card_from_value(4);
-        bot.recieve_card(create_card_from_value(10));
-        bot.recieve_card(create_card_from_value(2));
-        assert_eq!(bot.get_action(&upcard), Action::Stand);
+        check_action_from_cards::<AutoPlayer>((10, 2), Some(4), Action::Stand);
 
         // If the dealer's card is bad, hit at 11 or less.
-        let mut bot = AutoPlayer::new();
-        let upcard = create_card_from_value(4);
-        bot.recieve_card(create_card_from_value(8));
-        bot.recieve_card(create_card_from_value(3));
-        assert_eq!(bot.get_action(&upcard), Action::Hit);
+        check_action_from_cards::<AutoPlayer>((8, 3), Some(4), Action::Hit);
 
         // If the dealer's card is fair, stand at 13 or more.
-        let mut bot = AutoPlayer::new();
-        let upcard = create_card_from_value(2);
-        bot.recieve_card(create_card_from_value(10));
-        bot.recieve_card(create_card_from_value(3));
-        assert_eq!(bot.get_action(&upcard), Action::Stand);
+        check_action_from_cards::<AutoPlayer>((10, 3), Some(2), Action::Stand);
 
         // If the dealer's card is fair, hit at 12 or less.
-        let mut bot = AutoPlayer::new();
-        let upcard = create_card_from_value(2);
-        bot.recieve_card(create_card_from_value(10));
-        bot.recieve_card(create_card_from_value(2));
-        assert_eq!(bot.get_action(&upcard), Action::Hit);
+        check_action_from_cards::<AutoPlayer>((10, 2), Some(2), Action::Hit);
     }
 }
