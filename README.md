@@ -1,6 +1,6 @@
 # praeses-blackjack-rust [![Build & Test](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/rust-build-test.yml/badge.svg)](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/rust-build-test.yml) [![Release Binaries](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/release.yml/badge.svg)](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/release.yml)
 
-(demo video or screenshot here)
+![pbj-example](https://user-images.githubusercontent.com/8906125/175720761-59a8c0cd-74d9-4dbf-a02a-4ea90f37c95e.svg)
 
 # Praeses Blackjack
 
@@ -53,4 +53,12 @@ Pick out an issue in the repo's issues to tackle, and think carefully about how 
 Then you can make your changes! Remember it can be a good idea to run `cargo check` periodically, and before you commit it's also good to run `cargo fmt` so that the code is formatted consistently. 
 
 Once your changes are ready make a pull request and someone will review, approve, and merge it in.
+
+## Documentation
+
+To check the documentation for this crate and for other available crates while working on the project, you can run this command to generate documentation details and open them in your default browser:
+
+```
+$ cargo doc --open
+```
 
