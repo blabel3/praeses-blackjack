@@ -363,3 +363,204 @@ where
         break;
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hand_value_correct() {
+        assert_eq!(
+            21,
+            get_hand_value(&[
+                cards::Card {
+                    rank: cards::Rank::Ace,
+                    suit: cards::Suit::Club
+                },
+                cards::Card {
+                    rank: cards::Rank::King,
+                    suit: cards::Suit::Spade
+                }
+            ])
+        );
+        assert_eq!(
+            18,
+            get_hand_value(&[
+                cards::Card {
+                    rank: cards::Rank::Ace,
+                    suit: cards::Suit::Club
+                },
+                cards::Card {
+                    rank: cards::Rank::Seven,
+                    suit: cards::Suit::Diamond
+                },
+                cards::Card {
+                    rank: cards::Rank::Jack,
+                    suit: cards::Suit::Heart
+                }
+            ])
+        );
+        assert_eq!(
+            20,
+            get_hand_value(&[
+                cards::Card {
+                    rank: cards::Rank::Queen,
+                    suit: cards::Suit::Heart
+                },
+                cards::Card {
+                    rank: cards::Rank::King,
+                    suit: cards::Suit::Diamond
+                }
+            ])
+        );
+    }
+
+    #[test]
+    fn detects_naturals() {
+        assert_eq!(
+            true,
+            hand_is_natural(&[
+                cards::Card {
+                    rank: cards::Rank::Ace,
+                    suit: cards::Suit::Club
+                },
+                cards::Card {
+                    rank: cards::Rank::King,
+                    suit: cards::Suit::Spade
+                }
+            ])
+        );
+        assert_eq!(
+            false,
+            hand_is_natural(&[
+                cards::Card {
+                    rank: cards::Rank::Ace,
+                    suit: cards::Suit::Club
+                },
+                cards::Card {
+                    rank: cards::Rank::Seven,
+                    suit: cards::Suit::Diamond
+                },
+                cards::Card {
+                    rank: cards::Rank::Three,
+                    suit: cards::Suit::Heart
+                }
+            ])
+        );
+        assert_eq!(
+            false,
+            hand_is_natural(&[
+                cards::Card {
+                    rank: cards::Rank::Queen,
+                    suit: cards::Suit::Heart
+                },
+                cards::Card {
+                    rank: cards::Rank::King,
+                    suit: cards::Suit::Diamond
+                }
+            ])
+        );
+    }
+
+    #[test]
+    fn detects_busts() {
+        assert_eq!(
+            false,
+            hand_is_bust(&[
+                cards::Card {
+                    rank: cards::Rank::Ace,
+                    suit: cards::Suit::Club
+                },
+                cards::Card {
+                    rank: cards::Rank::King,
+                    suit: cards::Suit::Spade
+                }
+            ])
+        );
+        assert_eq!(
+            false,
+            hand_is_bust(&[
+                cards::Card {
+                    rank: cards::Rank::Ace,
+                    suit: cards::Suit::Club
+                },
+                cards::Card {
+                    rank: cards::Rank::Seven,
+                    suit: cards::Suit::Diamond
+                },
+                cards::Card {
+                    rank: cards::Rank::Four,
+                    suit: cards::Suit::Heart
+                }
+            ])
+        );
+        assert_eq!(
+            true,
+            hand_is_bust(&[
+                cards::Card {
+                    rank: cards::Rank::Ace,
+                    suit: cards::Suit::Club
+                },
+                cards::Card {
+                    rank: cards::Rank::King,
+                    suit: cards::Suit::Diamond
+                },
+                cards::Card {
+                    rank: cards::Rank::Nine,
+                    suit: cards::Suit::Heart
+                },
+                cards::Card {
+                    rank: cards::Rank::Seven,
+                    suit: cards::Suit::Heart
+                }
+            ])
+        );
+        assert_eq!(
+            false,
+            hand_is_bust(&[
+                cards::Card {
+                    rank: cards::Rank::Queen,
+                    suit: cards::Suit::Heart
+                },
+                cards::Card {
+                    rank: cards::Rank::King,
+                    suit: cards::Suit::Diamond
+                }
+            ])
+        );
+        assert_eq!(
+            false,
+            hand_is_bust(&[
+                cards::Card {
+                    rank: cards::Rank::Two,
+                    suit: cards::Suit::Heart
+                },
+                cards::Card {
+                    rank: cards::Rank::Two,
+                    suit: cards::Suit::Diamond
+                }
+            ])
+        );
+        assert_eq!(
+            true,
+            hand_is_bust(&[
+                cards::Card {
+                    rank: cards::Rank::Queen,
+                    suit: cards::Suit::Heart
+                },
+                cards::Card {
+                    rank: cards::Rank::King,
+                    suit: cards::Suit::Diamond
+                },
+                cards::Card {
+                    rank: cards::Rank::Nine,
+                    suit: cards::Suit::Club
+                },
+                cards::Card {
+                    rank: cards::Rank::Ten,
+                    suit: cards::Suit::Diamond
+                }
+            ])
+        );
+    }
+}

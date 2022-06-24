@@ -8,7 +8,7 @@ use crate::cards;
 use std::io;
 
 /// Supported player actions.
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Action {
     /// Adds a card from the deck to your hand
     Hit,
@@ -188,5 +188,89 @@ impl BlackjackDealer for Dealer {
 
     fn new() -> Dealer {
         Dealer { hand: Vec::new() }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn add_card_to_hand<T: BlackjackPlayer>(mut player: T) {
+        assert_eq!(0, player.get_hand().len());
+        player.recieve_card(cards::Card {
+            rank: cards::Rank::Ace,
+            suit: cards::Suit::Spade,
+        });
+
+        assert_eq!(1, player.get_hand().len());
+    }
+
+    #[test]
+    fn player_adds_card_to_hand() {
+        add_card_to_hand(HumanPlayer::new());
+    }
+
+    #[test]
+    fn dealer_adds_card_to_hand() {
+        add_card_to_hand(Dealer::new());
+    }
+
+    #[test]
+    fn dealer_acts_properly() {
+        let mut dealer = Dealer::new();
+
+        dealer.recieve_card(cards::Card {
+            rank: cards::Rank::Seven,
+            suit: cards::Suit::Spade,
+        });
+        dealer.recieve_card(cards::Card {
+            rank: cards::Rank::Ten,
+            suit: cards::Suit::Spade,
+        });
+        assert_eq!(dealer.get_action(), Action::Stand);
+        let mut dealer = Dealer::new();
+
+        dealer.recieve_card(cards::Card {
+            rank: cards::Rank::King,
+            suit: cards::Suit::Spade,
+        });
+        dealer.recieve_card(cards::Card {
+            rank: cards::Rank::Queen,
+            suit: cards::Suit::Spade,
+        });
+        assert_eq!(dealer.get_action(), Action::Stand);
+        let mut dealer = Dealer::new();
+
+        dealer.recieve_card(cards::Card {
+            rank: cards::Rank::Seven,
+            suit: cards::Suit::Spade,
+        });
+        dealer.recieve_card(cards::Card {
+            rank: cards::Rank::Ace,
+            suit: cards::Suit::Spade,
+        });
+        assert_eq!(dealer.get_action(), Action::Stand);
+        let mut dealer = Dealer::new();
+
+        dealer.recieve_card(cards::Card {
+            rank: cards::Rank::Four,
+            suit: cards::Suit::Spade,
+        });
+        dealer.recieve_card(cards::Card {
+            rank: cards::Rank::Eight,
+            suit: cards::Suit::Spade,
+        });
+        assert_eq!(dealer.get_action(), Action::Hit);
+        let mut dealer = Dealer::new();
+
+        dealer.recieve_card(cards::Card {
+            rank: cards::Rank::Nine,
+            suit: cards::Suit::Spade,
+        });
+        dealer.recieve_card(cards::Card {
+            rank: cards::Rank::Seven,
+            suit: cards::Suit::Spade,
+        });
+        assert_eq!(dealer.get_action(), Action::Hit);
     }
 }
