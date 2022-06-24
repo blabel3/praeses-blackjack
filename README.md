@@ -1,4 +1,4 @@
-# praeses-blackjack-rust [![Build & Test](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/rust-build-test.yml/badge.svg)](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/rust-build-test.yml)
+# praeses-blackjack-rust [![Build & Test](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/rust-build-test.yml/badge.svg)](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/rust-build-test.yml) [![Release Binaries](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/release.yml/badge.svg)](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/release.yml)
 
 (demo video or screenshot here)
 
@@ -41,7 +41,7 @@ $ cargo install --path .
 
 # Running
 
-Once the executable is installed, you should be able to run it by entering `pbj` in your terminal.
+Once the executable is installed, you should be able to run it by entering `pbj` in your terminal. A good start is to run `pbj help` for info on what options are available and some confirmation that everything is working correctly. 
 
 # Contributing
 
