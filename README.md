@@ -38,7 +38,7 @@ $ cargo install --path .
 
 # Running
 
-Once the executable is installed, you should be able to run it by entering `pbj` in your terminal. A good start is to run `pbj help` for info on what options are available and some confirmation that everything is working correctly. 
+Once the executable is installed, you should be able to run it by entering `pbj` in your terminal (or if you downloaded the binary, executing that binary). A good start is to run `pbj help` for info on what options are available and some confirmation that everything is working correctly. 
 
 # Contributing
 
