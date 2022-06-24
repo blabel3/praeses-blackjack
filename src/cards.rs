@@ -7,7 +7,7 @@ use strum::{EnumCount, IntoEnumIterator};
 use strum_macros::{EnumCount as EnumCountMacro, EnumIter};
 
 /// Enum describing the rank of a card.
-#[derive(EnumIter, EnumCountMacro, Copy, Clone, Debug)]
+#[derive(EnumIter, EnumCountMacro, Copy, Clone, Debug, PartialEq)]
 pub enum Rank {
     Ace,
     Two,
@@ -46,7 +46,7 @@ impl Rank {
 }
 
 /// Enum describing the suit of a card.
-#[derive(EnumIter, EnumCountMacro, Copy, Clone, Debug)]
+#[derive(EnumIter, EnumCountMacro, Copy, Clone, Debug, PartialEq)]
 pub enum Suit {
     Club,
     Diamond,
@@ -67,7 +67,7 @@ impl Suit {
 }
 
 /// Object describing a playing card.
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Card {
     pub rank: Rank,
     pub suit: Suit,
@@ -141,4 +141,40 @@ pub fn create_multideck(num_decks: u32) -> Vec<Card> {
 /// * `deck: The deck to shuffle, as a list of cards.
 pub fn shuffle_deck(deck: &mut Vec<Card>) {
     deck.shuffle(&mut thread_rng());
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn standard_deck_has_every_card() {
+        let standard_deck = standard_deck();
+
+        for suit in Suit::iter() {
+            for rank in Rank::iter() {
+                assert!(standard_deck.contains(&Card {
+                    rank,
+                    suit
+                }))
+            }
+        }
+    }
+
+    #[test]
+    fn multideck_is_correct_size() {
+        assert_eq!(0, create_multideck(0).len());
+        assert_eq!(STANDARD_DECK_COUNT, create_multideck(1).len());
+        assert_eq!(6*STANDARD_DECK_COUNT, create_multideck(6).len());
+        assert_eq!(8*STANDARD_DECK_COUNT, create_multideck(8).len());
+    }
+
+    #[test]
+    fn deck_gets_shuffled() {
+        let mut deck = create_multideck(1);
+        let mut top_five_cards: Deck = Vec::new();
+        top_five_cards.extend_from_slice(&deck[..5]);
+        shuffle_deck(&mut deck);
+        assert_ne!(top_five_cards, &deck[..5]);
+    }
 }
