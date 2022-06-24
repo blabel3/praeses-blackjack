@@ -153,10 +153,7 @@ mod tests {
 
         for suit in Suit::iter() {
             for rank in Rank::iter() {
-                assert!(standard_deck.contains(&Card {
-                    rank,
-                    suit
-                }))
+                assert!(standard_deck.contains(&Card { rank, suit }))
             }
         }
     }
@@ -165,8 +162,8 @@ mod tests {
     fn multideck_is_correct_size() {
         assert_eq!(0, create_multideck(0).len());
         assert_eq!(STANDARD_DECK_COUNT, create_multideck(1).len());
-        assert_eq!(6*STANDARD_DECK_COUNT, create_multideck(6).len());
-        assert_eq!(8*STANDARD_DECK_COUNT, create_multideck(8).len());
+        assert_eq!(6 * STANDARD_DECK_COUNT, create_multideck(6).len());
+        assert_eq!(8 * STANDARD_DECK_COUNT, create_multideck(8).len());
     }
 
     #[test]
