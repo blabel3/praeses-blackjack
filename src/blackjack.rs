@@ -118,6 +118,7 @@ where
             self.dealer.show_true_hand();
             println!("Dealer has blackjack!");
             for player in self.players {
+                player.show_hand();
                 let player_has_natural = hand_is_natural(player.get_hand_slice());
                 if player_has_natural {
                     round_results.push((player, PlayerRoundResult::Standoff));
@@ -134,7 +135,10 @@ where
                 .into_iter()
                 .all(|player| hand_is_natural(player.get_hand_slice()));
             if *all_players_have_blackjack {
+                self.dealer.show_true_hand();
                 for player in self.players {
+                    player.show_hand();
+                    println!("Blackjack!");
                     round_results.push((player, PlayerRoundResult::Win));
                 }
                 return IntermediateRoundResult::Finished {
@@ -303,14 +307,24 @@ pub fn card_value(card: &cards::Card) -> u32 {
     }
 }
 
+/// For a slice of cards, get the raw value of the hand (not counting aces potentially as 11)
+pub fn get_raw_hand_value(hand: &[cards::Card]) -> u32 {
+    let values: Vec<u32> = hand.iter().map(|card| card_value(card)).collect();
+    values.iter().sum()
+}
+
+/// Return true if the hand has an ace that can be counted as 11. 
+pub fn is_soft_hand(raw_value: u32, hand: &[cards::Card]) -> bool {
+    raw_value <= 11 && hand.iter().any(|&card| card.rank == cards::Rank::Ace)
+}
+
 /// For a slice of cards, return the value of the hand (properly handling Aces)
 pub fn get_hand_value(hand: &[cards::Card]) -> u32 {
-    let values: Vec<u32> = hand.iter().map(|card| card_value(card)).collect();
-    let sum = values.iter().sum();
-    if sum <= 11 && values.iter().any(|&x| x == 1) {
-        sum + 10
+    let raw_value: u32 = get_raw_hand_value(hand);
+    if is_soft_hand(raw_value, hand) {
+        raw_value + 10
     } else {
-        sum
+        raw_value
     }
 }
 

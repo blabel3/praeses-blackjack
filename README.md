@@ -13,7 +13,6 @@ Rust crate that lets people play blackjack in their terminal. Made with the idea
 - [Installing](#Installing)
 - [Running](#Running)
 - [Contributing](#Contributing)
-- [Demo](#Demo)
 
 # Installing
 

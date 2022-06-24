@@ -243,12 +243,12 @@ impl BlackjackPlayer for AutoPlayer {
     }
 
     fn get_action(&self, dealer_upcard: &cards::Card) -> Action {
-        // If the player has a soft hand (hand with ace), hit until at least 18.
-        if self
-            .get_hand_slice()
-            .iter()
-            .any(|&x| x.rank == cards::Rank::Ace)
-        {
+        // If the player has a soft hand, hit until at least 18.
+
+        if blackjack::is_soft_hand(
+            blackjack::get_raw_hand_value(self.get_hand_slice()),
+            self.get_hand_slice(),
+        ) {
             if blackjack::get_hand_value(self.get_hand_slice()) >= 18 {
                 return Action::Stand;
             } else {
