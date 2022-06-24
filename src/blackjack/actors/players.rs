@@ -11,16 +11,30 @@ pub trait Player: actors::Actor {
     where
         Self: Sized;
 
+    /// Returns a string slice representing this player's name. 
     fn get_name(&self) -> &str;
 
-    fn get_money(&self) -> &Option<u32>;
+    /// Gets the total money a player has currently. 
+    fn get_money(&mut self) -> &mut Option<u32>;
 
-    fn set_bet(&mut self);
-
+    /// Gets how much money a player is betting on the current round. 
     fn get_bet(&self) -> &Option<u32>;
 
-    fn buyin_if_broke(&mut self, buyin_amount: u32);
+    /// Solicits how much a player wants to bet and puts that money aside for betting
+    fn set_bet(&mut self);
 
+    /// Gives the player more money if they are out of it to keep the game going.  
+    fn buy_in_if_broke(&mut self, buy_in_amount: u32) {
+        if *self.get_money() == Some(0) {
+            println!(
+                "You went broke, {}! Don't worry, I'll spot you some cash.",
+                self.get_name()
+            );
+            *self.get_money() = Some(buy_in_amount);
+        }
+    }
+
+    /// Handles the result for a player at the end of a round (showing it to the user, updating bet/money). 
     fn handle_round_result(&mut self, result: blackjack::PlayerRoundResult, payout_ratio: f64);
 
     /// Get what action a player should take.
@@ -56,8 +70,12 @@ pub struct HumanPlayer {
 }
 
 impl actors::Actor for HumanPlayer {
-    fn get_hand(&self) -> &Vec<cards::Card> {
-        &self.hand
+    fn get_hand(&mut self) -> &mut Vec<cards::Card> {
+        &mut self.hand
+    }
+
+    fn get_hand_slice(&self) -> &[cards::Card] {
+        self.hand.as_slice()
     }
 
     fn show_hand(&self) {
@@ -69,10 +87,6 @@ impl actors::Actor for HumanPlayer {
             "     (value: {})",
             blackjack::get_hand_value(&self.get_hand_slice())
         );
-    }
-
-    fn recieve_card(&mut self, card: cards::Card) {
-        self.hand.push(card);
     }
 }
 
@@ -106,8 +120,8 @@ impl Player for HumanPlayer {
         &self.name
     }
 
-    fn get_money(&self) -> &Option<u32> {
-        &self.money
+    fn get_money(&mut self) -> &mut Option<u32> {
+        &mut self.money
     }
 
     fn decide_action(&self, _dealer_upcard: &cards::Card) -> actors::Action {
@@ -124,16 +138,6 @@ impl Player for HumanPlayer {
                 Ok(action) => return action,
                 Err(e) => println!("{}, try again.", e),
             }
-        }
-    }
-
-    fn buyin_if_broke(&mut self, buyin_amount: u32) {
-        if self.money == Some(0) {
-            println!(
-                "You went broke, {}! Don't worry, I'll spot you some cash.",
-                self.get_name()
-            );
-            self.money = Some(buyin_amount);
         }
     }
 
@@ -243,7 +247,7 @@ impl Player for HumanPlayer {
 }
 
 impl HumanPlayer {
-    /// Used in testing to not need person's input.
+    /// Used in testing to not need person's input to create a HumanPlayer. 
     #[allow(dead_code)]
     fn new_default() -> HumanPlayer {
         HumanPlayer {
@@ -264,8 +268,12 @@ pub struct AutoPlayer {
 }
 
 impl actors::Actor for AutoPlayer {
-    fn get_hand(&self) -> &Vec<cards::Card> {
-        &self.hand
+    fn get_hand(&mut self) -> &mut Vec<cards::Card> {
+        &mut self.hand
+    }
+
+    fn get_hand_slice(&self) -> &[cards::Card] {
+        self.hand.as_slice()
     }
 
     fn show_hand(&self) {
@@ -278,15 +286,11 @@ impl actors::Actor for AutoPlayer {
             blackjack::get_hand_value(&self.hand[..])
         );
     }
-
-    fn recieve_card(&mut self, card: cards::Card) {
-        self.hand.push(card);
-    }
 }
 
 impl Player for AutoPlayer {
-    fn new(buyin: u32) -> AutoPlayer {
-        let money = if buyin > 0 { Some(buyin) } else { None };
+    fn new(buy_in: u32) -> AutoPlayer {
+        let money = if buy_in > 0 { Some(buy_in) } else { None };
 
         AutoPlayer {
             hand: Vec::new(),
@@ -299,8 +303,8 @@ impl Player for AutoPlayer {
         "Bot"
     }
 
-    fn get_money(&self) -> &Option<u32> {
-        &self.money
+    fn get_money(&mut self) -> &mut Option<u32> {
+        &mut self.money
     }
 
     fn decide_action(&self, dealer_upcard: &cards::Card) -> actors::Action {
@@ -347,9 +351,9 @@ impl Player for AutoPlayer {
         &self.bet
     }
 
-    fn buyin_if_broke(&mut self, buyin_amount: u32) {
+    fn buy_in_if_broke(&mut self, buy_in_amount: u32) {
         if self.money == Some(0) {
-            self.money = Some(buyin_amount);
+            self.money = Some(buy_in_amount);
         }
     }
 

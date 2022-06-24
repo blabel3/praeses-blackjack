@@ -126,7 +126,7 @@ where
     ) -> ReadyGame<D> {
         let mut ready_players: Vec<Box<dyn Player>> = Vec::new();
         for mut player in players {
-            player.buyin_if_broke(options.betting_buyin);
+            player.buy_in_if_broke(options.betting_buyin);
             ready_players.push(player);
         }
 
