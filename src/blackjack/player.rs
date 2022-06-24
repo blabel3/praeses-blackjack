@@ -34,6 +34,13 @@ impl Action {
 
 /// A trait representing behavior every player in a game of blackjack should be able to handle.
 pub trait BlackjackPlayer {
+    /// Creates a new BlackjackPlayer
+    fn new() -> Self
+    where
+        Self: Sized;
+
+    fn get_name(&self) -> &str;
+
     /// Get a reference to the player's hand, all the cards they have.
     fn get_hand(&self) -> &cards::Hand;
 
@@ -82,10 +89,36 @@ pub trait BlackjackPlayer {
 
 /// A player controlled by a human and their input into the commandline. Their output is sent to stdout.
 pub struct HumanPlayer {
+    name: String,
     hand: cards::Hand,
 }
 
 impl BlackjackPlayer for HumanPlayer {
+    fn new() -> HumanPlayer {
+        println!("Input your name (or leave blank to be Player)");
+
+        let mut input = String::new();
+
+        io::stdin()
+            .read_line(&mut input)
+            .expect("Failed to read line");
+
+        input = input.trim().to_string();
+
+        if input.is_empty() {
+            input = "Player".to_owned();
+        }
+
+        HumanPlayer {
+            name: input,
+            hand: Vec::new(),
+        }
+    }
+
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+
     fn get_action(&self) -> Action {
         println!("{}", Action::ACTION_PROMPT);
 
@@ -110,7 +143,7 @@ impl BlackjackPlayer for HumanPlayer {
     }
 
     fn show_hand(&self) {
-        print!("Cards: {}", &self.hand[0]);
+        print!("{}'s Cards: {}", &self.name, &self.hand[0]);
         for card in &self.hand[1..] {
             print!(", {}", card);
         }
@@ -125,21 +158,11 @@ impl BlackjackPlayer for HumanPlayer {
     }
 }
 
-impl HumanPlayer {
-    /// Creates a new human player.
-    pub fn new() -> HumanPlayer {
-        HumanPlayer { hand: Vec::new() }
-    }
-}
-
 /// A trait representing the dealer in a game of blackjack.
 /// They act similarly to players, but with a bit more behaviors needed.
 pub trait BlackjackDealer: BlackjackPlayer {
-    /// Shows the tur ehand of the dealer (because usually their complete hand will be hidden from players).
+    /// Shows the true hand of the dealer (because usually their complete hand will be hidden from players).
     fn show_true_hand(&self);
-
-    /// Creates a new BlackjackDealer
-    fn new() -> Self;
 }
 
 /// A standard dealer whose output is sent to stdout.
@@ -149,6 +172,14 @@ pub struct Dealer {
 
 // Dealer probably doesn't need to implement this actually...
 impl BlackjackPlayer for Dealer {
+    fn new() -> Dealer {
+        Dealer { hand: Vec::new() }
+    }
+
+    fn get_name(&self) -> &str {
+        "Dealer"
+    }
+
     fn get_action(&self) -> Action {
         if blackjack::get_hand_value(&self.hand[..]) >= 17 {
             Action::Stand
@@ -184,10 +215,6 @@ impl BlackjackDealer for Dealer {
             "     (value: {})",
             blackjack::get_hand_value(&self.hand[..])
         );
-    }
-
-    fn new() -> Dealer {
-        Dealer { hand: Vec::new() }
     }
 }
 

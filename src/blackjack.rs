@@ -6,6 +6,7 @@ use std::cmp;
 use std::cmp::Ordering;
 use std::fmt;
 
+use crate::blackjack::player::BlackjackPlayer;
 use crate::cards;
 
 /// Options for running a game of blackjack.
@@ -141,7 +142,7 @@ where
 
     fn player_turns(&mut self) {
         for player in &mut self.players {
-            println!("---Player's turn!---");
+            println!("---{}'s turn!---", player.get_name());
             // If they had blackjack, they do not take a turn.
             if hand_is_natural(player.get_hand_slice()) {
                 self.dealer.show_hand();
@@ -189,11 +190,11 @@ where
     }
 
     fn dealer_turn(mut self) -> IntermediateRoundResult<D> {
-        println!("---Dealer's turn!---");
+        println!("---{}'s turn!---", self.dealer.get_name());
         loop {
             self.dealer.show_true_hand();
             if hand_is_bust(self.dealer.get_hand_slice()) {
-                println!("Dealer goes bust!");
+                println!("{} goes bust!", self.dealer.get_name());
                 let mut round_results: RoundResult = Vec::new();
                 for player in self.players {
                     if hand_is_bust(player.get_hand_slice()) {
@@ -319,9 +320,9 @@ pub fn hand_is_bust(hand: &[cards::Card]) -> bool {
 /// Settles the round--goes over the results (and bets once those are added)
 fn settle_round(round_results: RoundResult) {
     println!("");
-    for (_player, result) in round_results {
+    for (player, result) in round_results {
         //player.show_hand();
-        println!("{}", result);
+        println!("{}: {}", player.get_name(), result);
     }
 }
 
