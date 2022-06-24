@@ -39,7 +39,7 @@ pub trait Dealer: actors::Actor {
         }
     }
 
-    /// Decide what action to take and handle that action. Returns true if they can take another turn. 
+    /// Decide what action to take and handle that action. Returns true if they can take another turn.
     fn take_turn(&mut self, deck: &mut cards::Deck) -> bool {
         let action = self.decide_action();
         self.handle_dealer_action(action, deck)

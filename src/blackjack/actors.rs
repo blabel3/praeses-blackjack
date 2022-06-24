@@ -1,6 +1,6 @@
 //! Logic for Blackjack actors: what behaviors everyone involved in a game of blackjack
-//! (dealers, players, etc) needs to know how to do. This doesn't have much use by itself 
-//! but is a good base to build more specific structs off of. 
+//! (dealers, players, etc) needs to know how to do. This doesn't have much use by itself
+//! but is a good base to build more specific structs off of.
 
 pub mod dealers;
 pub mod players;

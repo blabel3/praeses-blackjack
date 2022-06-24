@@ -1,6 +1,6 @@
 //! Player-specific logic. Players need to worry about betting and can take actions
 //! that dealers can't, so this is for modeling players who are sitting at the casino table.
-//! Using this, you can create players that behave differently but all 
+//! Using this, you can create players that behave differently but all
 //! act within the allowed moves in Blackjack.
 
 use std::io;
@@ -56,7 +56,7 @@ pub trait Player: actors::Actor {
         }
     }
 
-    /// Decide what action to take and handle that action. Returns true if they can take another turn. 
+    /// Decide what action to take and handle that action. Returns true if they can take another turn.
     fn take_turn(&mut self, deck: &mut cards::Deck, dealer_upcard: &cards::Card) -> bool {
         let action = self.decide_action(dealer_upcard);
         self.handle_player_action(action, deck)

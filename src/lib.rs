@@ -5,5 +5,5 @@
 pub mod blackjack;
 pub mod cards;
 
-pub use crate::blackjack::actors::players::Player;
 pub use crate::blackjack::actors::dealers::Dealer;
+pub use crate::blackjack::actors::players::Player;
