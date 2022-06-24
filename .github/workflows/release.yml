@@ -1,5 +1,4 @@
 name: Release Binaries
-uses: rust-build/rust-build.action@v1.3.2
 
 on:
   release:
