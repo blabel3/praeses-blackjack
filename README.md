@@ -1,12 +1,10 @@
-# praeses-blackjack-rust [![Build & Test](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/rust-build-test.yml/badge.svg)](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/rust-build-test.yml) [![Release Binaries](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/release.yml/badge.svg)](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/release.yml)
-
-![pbj-example](https://user-images.githubusercontent.com/8906125/175720761-59a8c0cd-74d9-4dbf-a02a-4ea90f37c95e.svg)
-
-# Praeses Blackjack
+# Praeses Blackjack [![Build & Test](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/rust-build-test.yml/badge.svg)](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/rust-build-test.yml) [![Release Binaries](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/release.yml/badge.svg)](https://github.com/blabel3/praeses-blackjack-rust/actions/workflows/release.yml)
 
 *Created in a week for part of the software engineer interview process at [Praeses](https://praeses.com/)* 
 
 Rust crate that lets people play blackjack in their terminal. Made with the idea of extending later to support additional players and possibly a web client that interacts with this running on a server. But the main priority was to write good, readable, maintainable, efficient code to flex for Praeses!
+
+![pbj-example](https://user-images.githubusercontent.com/8906125/175720761-59a8c0cd-74d9-4dbf-a02a-4ea90f37c95e.svg)
 
 # Table of Contents
 
@@ -44,7 +42,7 @@ Once the executable is installed, you should be able to run it by entering `pbj`
 
 # Contributing
 
-To contribute to the project, first set up your environment by following the directions from [Installing with Rust](#Installing-with-Rust-(recommended)).
+To contribute to the project, first set up your environment by following the directions from [Installing with Rust](#Installing-with-Rust-recommended).
 
 To make edits to the code, first, make sure you're in a new branch! The repo is set up to not allow commits directly on main to make sure the main branch is stable.
 
