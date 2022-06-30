@@ -103,7 +103,7 @@ mod tests {
     /// Making sure the dealer can add a card to their hand.
     #[test]
     fn standard_dealer_adds_card_to_hand() {
-        actor_tests::add_card_to_hand(StandardDealer::new());
+        actor_tests::adds_card_to_hand(StandardDealer::new());
     }
 
     /// Check that the dealer's actions follow blackjack rules.

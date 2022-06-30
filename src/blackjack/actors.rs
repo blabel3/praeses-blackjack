@@ -59,7 +59,7 @@ mod tests {
     use super::*;
 
     /// Function that tests for any actor whether they properly add a card to their hand.
-    pub fn add_card_to_hand<T: Actor>(mut actor: T) {
+    pub fn adds_card_to_hand<T: Actor>(mut actor: T) {
         assert_eq!(0, actor.get_hand_slice().len());
         actor.recieve_card(cards::Card {
             rank: cards::Rank::Ace,
