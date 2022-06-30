@@ -35,22 +35,22 @@ impl Action {
 /// General trait for behavior that both players and dealers should implement.
 pub trait Actor {
     /// Get a mutable reference to the actor's hand, all the cards they have.
-    fn get_hand(&mut self) -> &mut cards::Hand;
+    fn hand_mut(&mut self) -> &mut cards::Hand;
 
     /// Get a slice of all cards from an actor's hand. Read-only (as slices are)
-    fn get_hand_slice(&self) -> &[cards::Card];
+    fn hand(&self) -> &[cards::Card];
 
     /// Display the actor's current hand in a natural way.
     fn show_hand(&self);
 
     /// Add a card given in the argument to a actor's hand.
     fn recieve_card(&mut self, card: cards::Card) {
-        self.get_hand().push(card);
+        self.hand_mut().push(card);
     }
 
     /// Discards all cards in an actor's hand.
     fn discard_hand(&mut self) {
-        self.get_hand().clear();
+        self.hand_mut().clear();
     }
 }
 
@@ -60,13 +60,13 @@ mod tests {
 
     /// Function that tests for any actor whether they properly add a card to their hand.
     pub fn adds_card_to_hand<T: Actor>(mut actor: T) {
-        assert_eq!(0, actor.get_hand_slice().len());
+        assert_eq!(0, actor.hand().len());
         actor.recieve_card(cards::Card {
             rank: cards::Rank::Ace,
             suit: cards::Suit::Spade,
         });
 
-        assert_eq!(1, actor.get_hand_slice().len());
+        assert_eq!(1, actor.hand().len());
     }
 
     /// Helper function for creating cards succinctly, when we don't care about the suit.

@@ -15,30 +15,30 @@ use crate::cards;
 /// A trait representing behavior every player in a game of blackjack should be able to handle.
 pub trait Player: actors::Actor {
     /// Creates a new object that implements Player.
-    fn new(buyin: u32) -> Self
+    fn new(buy_in: u32) -> Self
     where
         Self: Sized;
 
     /// Returns a string slice representing this player's name.
-    fn get_name(&self) -> &str;
+    fn name(&self) -> &str;
 
     /// Gets the total money a player has currently.
-    fn get_money(&mut self) -> &mut Option<u32>;
+    fn money_mut(&mut self) -> &mut Option<u32>;
 
     /// Gets how much money a player is betting on the current round.
-    fn get_bet(&mut self) -> &mut Option<u32>;
+    fn bet_mut(&mut self) -> &mut Option<u32>;
 
     /// Solicits how much a player wants to bet and puts that money aside for betting.
-    fn set_bet(&mut self);
+    fn place_bet(&mut self);
 
     /// Gives the player more money if they are out of it to keep the game going.  
     fn buy_in_if_broke(&mut self, buy_in_amount: u32) {
-        if *self.get_money() == Some(0) {
+        if *self.money_mut() == Some(0) {
             println!(
                 "You went broke, {}! Don't worry, I'll spot you some cash.",
-                self.get_name()
+                self.name()
             );
-            *self.get_money() = Some(buy_in_amount);
+            *self.money_mut() = Some(buy_in_amount);
         }
     }
 
@@ -67,49 +67,49 @@ pub trait Player: actors::Actor {
 
     /// Handles the result for a player at the end of a round (showing it to the user, updating bet/money).
     fn handle_round_result(&mut self, result: blackjack::PlayerRoundResult, payout_ratio: f64) {
-        print!("{}: {} ", self.get_name(), result);
-        if self.get_bet().is_none() {
+        print!("{}: {} ", self.name(), result);
+        if self.bet_mut().is_none() {
             println!("");
             return;
         }
 
-        let bet = self.get_bet().unwrap();
+        let bet = self.bet_mut().unwrap();
         match result {
             blackjack::PlayerRoundResult::Natural => {
                 let winnings = bet + (payout_ratio * bet as f64).floor() as u32;
-                *self.get_money() = Some(self.get_money().unwrap() + winnings);
+                *self.money_mut() = Some(self.money_mut().unwrap() + winnings);
                 println!(
                     "You won ${}. (Total cash: ${})",
                     winnings,
-                    self.get_money().unwrap()
+                    self.money_mut().unwrap()
                 );
             }
             blackjack::PlayerRoundResult::Win => {
                 let winnings: u32 = bet + bet;
-                *self.get_money() = Some(self.get_money().unwrap() + winnings);
+                *self.money_mut() = Some(self.money_mut().unwrap() + winnings);
                 println!(
                     "You won ${}. (Total cash: ${})",
                     winnings,
-                    self.get_money().unwrap()
+                    self.money_mut().unwrap()
                 );
             }
             blackjack::PlayerRoundResult::Standoff => {
-                *self.get_money() = Some(self.get_money().unwrap() + bet);
+                *self.money_mut() = Some(self.money_mut().unwrap() + bet);
                 println!(
                     "You kept your original ${} bet (Total cash: ${})",
                     bet,
-                    self.get_money().unwrap()
+                    self.money_mut().unwrap()
                 );
             }
             blackjack::PlayerRoundResult::Lose => {
                 println!(
                     "You lost your ${} bet. (Total cash: ${})",
                     bet,
-                    self.get_money().unwrap()
+                    self.money_mut().unwrap()
                 );
             }
         }
-        *self.get_bet() = None;
+        *self.bet_mut() = None;
     }
 }
 

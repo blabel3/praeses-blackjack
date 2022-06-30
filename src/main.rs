@@ -21,7 +21,7 @@ struct Args {
 
     /// Initial buy-in for betting (set to 0 to disable betting)
     #[clap(short = 'b', long, value_parser, default_value_t = 500)]
-    betting_buyin: u32,
+    betting_buy_in: u32,
 
     /// Payout ratio for the game
     #[clap(short, long, value_parser, default_value_t = 3.0/2.0)]
@@ -35,7 +35,7 @@ fn main() {
         num_players: args.human_players,
         bot_player: args.robot_player,
         num_decks: args.num_decks,
-        betting_buyin: args.betting_buyin,
+        betting_buy_in: args.betting_buy_in,
         payout_ratio: args.payout_ratio,
     };
 

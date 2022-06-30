@@ -14,28 +14,25 @@ pub struct HumanPlayer {
 }
 
 impl actors::Actor for HumanPlayer {
-    fn get_hand(&mut self) -> &mut Vec<cards::Card> {
+    fn hand_mut(&mut self) -> &mut Vec<cards::Card> {
         &mut self.hand
     }
 
-    fn get_hand_slice(&self) -> &[cards::Card] {
+    fn hand(&self) -> &[cards::Card] {
         self.hand.as_slice()
     }
 
     fn show_hand(&self) {
-        print!("{}'s Cards: {}", self.get_name(), &self.hand[0]);
-        for card in &self.get_hand_slice()[1..] {
+        print!("{}'s Cards: {}", self.name(), &self.hand[0]);
+        for card in &self.hand()[1..] {
             print!(", {}", card);
         }
-        println!(
-            "     (value: {})",
-            blackjack::get_hand_value(&self.get_hand_slice())
-        );
+        println!("     (value: {})", blackjack::hand_value(&self.hand()));
     }
 }
 
 impl players::Player for HumanPlayer {
-    fn new(buyin: u32) -> HumanPlayer {
+    fn new(buy_in: u32) -> HumanPlayer {
         println!("Input your name (or leave blank to be Player)");
 
         let mut input = String::new();
@@ -50,7 +47,7 @@ impl players::Player for HumanPlayer {
             input = "Player".to_owned();
         }
 
-        let money: Option<u32> = if buyin > 0 { Some(buyin) } else { None };
+        let money: Option<u32> = if buy_in > 0 { Some(buy_in) } else { None };
 
         HumanPlayer {
             name: input,
@@ -60,20 +57,20 @@ impl players::Player for HumanPlayer {
         }
     }
 
-    fn get_name(&self) -> &str {
+    fn name(&self) -> &str {
         &self.name
     }
 
-    fn get_money(&mut self) -> &mut Option<u32> {
+    fn money_mut(&mut self) -> &mut Option<u32> {
         &mut self.money
     }
 
-    fn get_bet(&mut self) -> &mut Option<u32> {
+    fn bet_mut(&mut self) -> &mut Option<u32> {
         &mut self.bet
     }
 
-    fn set_bet(&mut self) {
-        let funds = self.get_money();
+    fn place_bet(&mut self) {
+        let funds = self.money_mut();
         if funds.is_none() {
             return;
         }
@@ -81,7 +78,7 @@ impl players::Player for HumanPlayer {
 
         println!(
             "What would you like to bet this round, {}? (Funds: ${}) ",
-            self.get_name(),
+            self.name(),
             funds
         );
 

@@ -18,7 +18,7 @@ pub trait Dealer: actors::Actor {
     /// Get what action a dealer should take. Should be the same for all dealers
     /// so a default implementation is provided.
     fn decide_action(&self) -> actors::Action {
-        if blackjack::get_hand_value(self.get_hand_slice()) >= 17 {
+        if blackjack::hand_value(self.hand()) >= 17 {
             actors::Action::Stand
         } else {
             actors::Action::Hit
@@ -52,11 +52,11 @@ pub struct StandardDealer {
 }
 
 impl actors::Actor for StandardDealer {
-    fn get_hand(&mut self) -> &mut Vec<cards::Card> {
+    fn hand_mut(&mut self) -> &mut Vec<cards::Card> {
         &mut self.hand
     }
 
-    fn get_hand_slice(&self) -> &[cards::Card] {
+    fn hand(&self) -> &[cards::Card] {
         self.hand.as_slice()
     }
 
@@ -79,10 +79,7 @@ impl Dealer for StandardDealer {
         for card in &self.hand[1..] {
             print!(", {}", card);
         }
-        println!(
-            "     (value: {})",
-            blackjack::get_hand_value(&self.hand[..])
-        );
+        println!("     (value: {})", blackjack::hand_value(&self.hand[..]));
     }
 }
 
