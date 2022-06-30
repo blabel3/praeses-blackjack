@@ -279,7 +279,7 @@ where
                 continue;
             }
 
-            // If a player is bust then they lose. 
+            // If a player is bust then they lose.
             if hand_is_bust(player.get_hand_slice()) {
                 round_results.push((player, PlayerRoundResult::Lose));
                 continue;
