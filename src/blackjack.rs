@@ -279,6 +279,12 @@ where
                 continue;
             }
 
+            // If a player is bust then they lose. 
+            if hand_is_bust(player.get_hand_slice()) {
+                round_results.push((player, PlayerRoundResult::Lose));
+                continue;
+            }
+
             match get_hand_value(player.get_hand_slice())
                 .cmp(&get_hand_value(self.dealer.get_hand_slice()))
             {
