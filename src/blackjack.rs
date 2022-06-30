@@ -19,7 +19,7 @@ pub struct GameOptions {
     /// How many decks are used to create the deck (most popular is six for a 312 card game).
     pub num_decks: u32,
     /// How much money to give players to start with (and if/when they run out).
-    pub betting_buyin: u32,
+    pub betting_buy_in: u32,
     /// Payout for winning in blackjack, usually 3:2 or 6:5.
     /// Higher is better for the players, lower is better for the house.
     pub payout_ratio: f64,
@@ -82,12 +82,12 @@ where
         let mut players: Vec<Box<dyn players::Player>> = Vec::new();
 
         if options.bot_player {
-            players.push(Box::new(players::AutoPlayer::new(options.betting_buyin)));
+            players.push(Box::new(players::AutoPlayer::new(options.betting_buy_in)));
         }
 
         for _ in 0..options.num_players {
             // Will change with multiplayer and such -- We will have to call new on different players!
-            players.push(Box::new(players::HumanPlayer::new(options.betting_buyin)));
+            players.push(Box::new(players::HumanPlayer::new(options.betting_buy_in)));
         }
 
         let mut deck = cards::create_multideck(options.num_decks);
@@ -102,7 +102,7 @@ where
 
     fn deal_hands(mut self) -> InProgressGame<D> {
         for player in &mut self.players {
-            player.set_bet();
+            player.place_bet();
         }
 
         println!("");
@@ -128,12 +128,12 @@ where
     ) -> ReadyGame<D> {
         let mut ready_players: Vec<Box<dyn Player>> = Vec::new();
         for mut player in players {
-            player.buy_in_if_broke(options.betting_buyin);
+            player.buy_in_if_broke(options.betting_buy_in);
             ready_players.push(player);
         }
 
         let mut deck: cards::Deck;
-        if leftover_deck.len() > get_reshuffle_number(options.num_decks).try_into().unwrap() {
+        if leftover_deck.len() > reshuffle_number(options.num_decks).try_into().unwrap() {
             deck = leftover_deck;
         } else {
             println!("Reshuffling deck...\n");
@@ -155,14 +155,14 @@ where
 {
     fn handle_naturals(self) -> IntermediateRoundResult<D> {
         let mut round_results: RoundResult = Vec::new();
-        let dealer_has_natural = hand_is_natural(self.dealer.get_hand_slice());
+        let dealer_has_natural = hand_is_natural(self.dealer.hand());
 
         if dealer_has_natural {
             self.dealer.show_true_hand();
             println!("Dealer has blackjack!");
             for player in self.players {
                 player.show_hand();
-                let player_has_natural = hand_is_natural(player.get_hand_slice());
+                let player_has_natural = hand_is_natural(player.hand());
                 if player_has_natural {
                     round_results.push((player, PlayerRoundResult::Standoff));
                 } else {
@@ -176,7 +176,7 @@ where
         } else {
             let all_players_have_blackjack = &self.players[..]
                 .into_iter()
-                .all(|player| hand_is_natural(player.get_hand_slice()));
+                .all(|player| hand_is_natural(player.hand()));
             if *all_players_have_blackjack {
                 self.dealer.show_true_hand();
                 for player in self.players {
@@ -194,9 +194,9 @@ where
 
     fn player_turns(&mut self) {
         for player in &mut self.players {
-            println!("---{}'s turn!---", player.get_name());
+            println!("---{}'s turn!---", player.name());
             // If they had blackjack, they do not take a turn.
-            if hand_is_natural(player.get_hand_slice()) {
+            if hand_is_natural(player.hand()) {
                 self.dealer.show_hand();
                 player.show_hand();
                 println!("Blackjack!");
@@ -206,11 +206,11 @@ where
             loop {
                 self.dealer.show_hand();
                 player.show_hand(); //# compared to show hands
-                if hand_is_bust(player.get_hand_slice()) {
+                if hand_is_bust(player.hand()) {
                     println!("Bust!");
                     break;
                 }
-                let turn_over = player.take_turn(&mut self.deck, &self.dealer.get_hand_slice()[1]);
+                let turn_over = player.take_turn(&mut self.deck, &self.dealer.hand()[1]);
                 if turn_over {
                     break;
                 }
@@ -220,14 +220,14 @@ where
     }
 
     fn check_if_all_players_finished(self) -> IntermediateRoundResult<D> {
-        let all_done: bool = self.players[..].into_iter().all(|player| {
-            hand_is_bust(player.get_hand_slice()) || hand_is_natural(player.get_hand_slice())
-        });
+        let all_done: bool = self.players[..]
+            .into_iter()
+            .all(|player| hand_is_bust(player.hand()) || hand_is_natural(player.hand()));
 
         if all_done {
             let mut round_results: RoundResult = Vec::new();
             for player in self.players {
-                if hand_is_natural(player.get_hand_slice()) {
+                if hand_is_natural(player.hand()) {
                     round_results.push((player, PlayerRoundResult::Natural))
                 } else {
                     round_results.push((player, PlayerRoundResult::Lose))
@@ -245,11 +245,11 @@ where
         println!("---Dealer's turn!---");
         loop {
             self.dealer.show_true_hand();
-            if hand_is_bust(self.dealer.get_hand_slice()) {
+            if hand_is_bust(self.dealer.hand()) {
                 println!("Dealer goes bust!");
                 let mut round_results: RoundResult = Vec::new();
                 for player in self.players {
-                    if hand_is_bust(player.get_hand_slice()) {
+                    if hand_is_bust(player.hand()) {
                         round_results.push((player, PlayerRoundResult::Lose))
                     } else {
                         round_results.push((player, PlayerRoundResult::Win))
@@ -274,20 +274,18 @@ where
         for player in self.players {
             // If a player had blackjack, they win even if the dealer got to 21 themselves later.
             // If dealer had blackjack, then the game would've ended before this call.
-            if hand_is_natural(player.get_hand_slice()) {
+            if hand_is_natural(player.hand()) {
                 round_results.push((player, PlayerRoundResult::Win));
                 continue;
             }
 
             // If a player is bust then they lose.
-            if hand_is_bust(player.get_hand_slice()) {
+            if hand_is_bust(player.hand()) {
                 round_results.push((player, PlayerRoundResult::Lose));
                 continue;
             }
 
-            match get_hand_value(player.get_hand_slice())
-                .cmp(&get_hand_value(self.dealer.get_hand_slice()))
-            {
+            match hand_value(player.hand()).cmp(&hand_value(self.dealer.hand())) {
                 Ordering::Less => round_results.push((player, PlayerRoundResult::Lose)),
                 Ordering::Greater => round_results.push((player, PlayerRoundResult::Win)),
                 Ordering::Equal => round_results.push((player, PlayerRoundResult::Standoff)),
@@ -355,7 +353,7 @@ pub fn card_value(card: &cards::Card) -> u32 {
 }
 
 /// For a slice of cards, get the raw value of the hand (not counting aces potentially as 11)
-pub fn get_raw_hand_value(hand: &[cards::Card]) -> u32 {
+pub fn raw_hand_value(hand: &[cards::Card]) -> u32 {
     let values: Vec<u32> = hand.iter().map(|card| card_value(card)).collect();
     values.iter().sum()
 }
@@ -366,8 +364,8 @@ pub fn is_soft_hand(raw_value: u32, hand: &[cards::Card]) -> bool {
 }
 
 /// For a slice of cards, return the value of the hand (properly handling Aces)
-pub fn get_hand_value(hand: &[cards::Card]) -> u32 {
-    let raw_value: u32 = get_raw_hand_value(hand);
+pub fn hand_value(hand: &[cards::Card]) -> u32 {
+    let raw_value: u32 = raw_hand_value(hand);
     if is_soft_hand(raw_value, hand) {
         raw_value + 10
     } else {
@@ -377,12 +375,12 @@ pub fn get_hand_value(hand: &[cards::Card]) -> u32 {
 
 /// For a slice of cards, return true if the value of the hand is exactly 21 and there are only 2 cards in the hand.
 pub fn hand_is_natural(hand: &[cards::Card]) -> bool {
-    get_hand_value(&hand) == 21 && hand.len() == 2
+    hand_value(&hand) == 21 && hand.len() == 2
 }
 
 /// For a slice of cards, return true if the value of the hand is over 21.
 pub fn hand_is_bust(hand: &[cards::Card]) -> bool {
-    get_hand_value(&hand) > 21
+    hand_value(&hand) > 21
 }
 
 /// Settles the round--goes over the results (and bets once those are added)
@@ -406,7 +404,7 @@ fn settle_round(round_results: RoundResult, &payout_ratio: &f64) -> Vec<Box<dyn 
 ///
 /// * `num_decks` - number of decks used to create the deck for the game. Should be same
 /// value that's passed into `cards::create_multideck(num_decks)`
-fn get_reshuffle_number(num_decks: u32) -> u32 {
+fn reshuffle_number(num_decks: u32) -> u32 {
     let deck_card_count = u32::try_from(cards::STANDARD_DECK_COUNT).unwrap();
     cmp::max(40, num_decks * deck_card_count / 5)
 }
@@ -445,7 +443,7 @@ fn should_play_another_round() -> bool {
 /// num_players: 1,
 /// bot_player: false,
 /// num_decks: 6,
-/// betting_buyin: 500,
+/// betting_buy_in: 500,
 /// payout_ratio: 1.5,
 /// };
 ///
@@ -487,7 +485,7 @@ mod tests {
     fn hand_value_correct() {
         assert_eq!(
             21,
-            get_hand_value(&[
+            hand_value(&[
                 cards::Card {
                     rank: cards::Rank::Ace,
                     suit: cards::Suit::Club
@@ -500,7 +498,7 @@ mod tests {
         );
         assert_eq!(
             18,
-            get_hand_value(&[
+            hand_value(&[
                 cards::Card {
                     rank: cards::Rank::Ace,
                     suit: cards::Suit::Club
@@ -517,7 +515,7 @@ mod tests {
         );
         assert_eq!(
             20,
-            get_hand_value(&[
+            hand_value(&[
                 cards::Card {
                     rank: cards::Rank::Queen,
                     suit: cards::Suit::Heart

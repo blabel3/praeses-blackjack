@@ -13,23 +13,20 @@ pub struct AutoPlayer {
 }
 
 impl actors::Actor for AutoPlayer {
-    fn get_hand(&mut self) -> &mut Vec<cards::Card> {
+    fn hand_mut(&mut self) -> &mut Vec<cards::Card> {
         &mut self.hand
     }
 
-    fn get_hand_slice(&self) -> &[cards::Card] {
+    fn hand(&self) -> &[cards::Card] {
         self.hand.as_slice()
     }
 
     fn show_hand(&self) {
-        print!("{}'s Cards: {}", self.get_name(), &self.hand[0]);
+        print!("{}'s Cards: {}", self.name(), &self.hand[0]);
         for card in &self.hand[1..] {
             print!(", {}", card);
         }
-        println!(
-            "     (value: {})",
-            blackjack::get_hand_value(&self.hand[..])
-        );
+        println!("     (value: {})", blackjack::hand_value(&self.hand[..]));
     }
 }
 
@@ -44,30 +41,27 @@ impl players::Player for AutoPlayer {
         }
     }
 
-    fn get_name(&self) -> &str {
+    fn name(&self) -> &str {
         "Bot"
     }
 
-    fn get_money(&mut self) -> &mut Option<u32> {
+    fn money_mut(&mut self) -> &mut Option<u32> {
         &mut self.money
     }
 
-    fn get_bet(&mut self) -> &mut Option<u32> {
+    fn bet_mut(&mut self) -> &mut Option<u32> {
         &mut self.bet
     }
 
-    fn set_bet(&mut self) {
+    fn place_bet(&mut self) {
         // Maybe put in bot betting logic.
-        //println!("Getting bet for {}", self.get_name());
+        //println!("Getting bet for {}", self.name());
     }
 
     fn decide_action(&self, dealer_upcard: &cards::Card) -> actors::Action {
         // If the player has a soft hand, hit until at least 18.
-        if blackjack::is_soft_hand(
-            blackjack::get_raw_hand_value(self.get_hand_slice()),
-            self.get_hand_slice(),
-        ) {
-            if blackjack::get_hand_value(self.get_hand_slice()) >= 18 {
+        if blackjack::is_soft_hand(blackjack::raw_hand_value(self.hand()), self.hand()) {
+            if blackjack::hand_value(self.hand()) >= 18 {
                 return actors::Action::Stand;
             } else {
                 return actors::Action::Hit;
@@ -90,7 +84,7 @@ impl players::Player for AutoPlayer {
             cards::Rank::Two | cards::Rank::Three => 13,
         };
 
-        if blackjack::get_hand_value(self.get_hand_slice()) >= stop_at {
+        if blackjack::hand_value(self.hand()) >= stop_at {
             actors::Action::Stand
         } else {
             actors::Action::Hit
