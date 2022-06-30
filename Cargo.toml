@@ -1,6 +1,6 @@
 [package]
 name = "praeses_blackjack"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["Blake Abel <blake@blabel.dev>"]
 description = "Library for playing blackjack"
